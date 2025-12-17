@@ -1,0 +1,17 @@
+const express = require('express');
+const router = express.Router();
+const TurnoController = require('../controllers/turnoController');
+
+// GET /api/turnos?fecha=YYYY-MM-DD&cancha_id=X
+router.get('/', TurnoController.getTurnos);
+
+// POST /api/turnos
+router.post('/', TurnoController.createTurno);
+
+// POST /api/turnos/:id/pagos
+router.post('/:id/pagos', TurnoController.registrarPago);
+
+// PATCH /api/turnos/:id/status
+router.patch('/:id/status', TurnoController.updateStatus);
+
+module.exports = router;
