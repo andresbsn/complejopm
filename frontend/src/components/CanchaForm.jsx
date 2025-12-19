@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CanchaService } from '../services/api';
 
-const CanchaForm = ({ onCanchaAdded }) => {
+const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
     const [nombre, setNombre] = useState('');
-    const [tipo, setTipo] = useState('padel');
+    const [tipo, setTipo] = useState(defaultType.toLowerCase());
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Update tipo if defaultType changes
+    useEffect(() => {
+        if (defaultType) {
+            setTipo(defaultType.toLowerCase());
+        }
+    }, [defaultType]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -15,13 +22,12 @@ const CanchaForm = ({ onCanchaAdded }) => {
         try {
             await CanchaService.create({ 
                 nombre, 
-                tipo: tipo.toUpperCase() // Ensure uppercase for consistency with ReservaPage
+                tipo: tipo.toUpperCase()
             });
 
             setNombre('');
-            setTipo('padel'); // Reset to default state (internal value can remain lowercase for select)
             if (onCanchaAdded) onCanchaAdded();
-            alert('Cancha creada exitosamente');
+            // alert('Cancha creada exitosamente'); // Removed alert, let parent handle or just close
         } catch (err) {
             setError(err.response?.data?.error || err.message);
         } finally {
@@ -30,7 +36,7 @@ const CanchaForm = ({ onCanchaAdded }) => {
     };
 
     return (
-        <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-6 mb-6">
+        <div className="p-1">
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Agregar Nueva Cancha</h3>
             {error && <div className="mb-4 p-4 rounded-md bg-red-50 text-red-700">{error}</div>}
             <form onSubmit={handleSubmit}>
@@ -46,6 +52,7 @@ const CanchaForm = ({ onCanchaAdded }) => {
                         className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
                         placeholder="Ej: Cancha 1"
                         required
+                        autoComplete="off"
                     />
                 </div>
                 <div className="mb-6">
@@ -62,7 +69,16 @@ const CanchaForm = ({ onCanchaAdded }) => {
                         <option value="futbol">Fútbol</option>
                     </select>
                 </div>
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end space-x-3">
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            Cancelar
+                        </button>
+                    )}
                     <button
                         type="submit"
                         disabled={loading}

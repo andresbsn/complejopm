@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguracionService, CanchaService, TurnoService } from '../services/api';
 import ReservaGrid from './ReservaGrid';
-import TurnoForm from './TurnoForm'; // Reusing or wrapping existing form logic? Ideally a specific modal.
-// Using a simple modal implementation here for speed and integration
 import PagoModal from './PagoModal';
 import ReservaModal from './ReservaModal';
+import CanchaForm from './CanchaForm';
+import { useAuth } from '../context/AuthContext';
 
 const ReservaPage = ({ type }) => {
     // type: 'PADEL' or 'FUTBOL' (or whatever matches database 'tipo' and config keys)
     
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
+
     const [config, setConfig] = useState(null);
     const [canchas, setCanchas] = useState([]);
     const [reservas, setReservas] = useState([]);
@@ -16,28 +19,30 @@ const ReservaPage = ({ type }) => {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [modalOpen, setModalOpen] = useState(false);
     const [pagoModalOpen, setPagoModalOpen] = useState(false);
+    const [canchaModalOpen, setCanchaModalOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [selectedReserva, setSelectedReserva] = useState(null);
 
     // Initial Data Fetch
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const [configData, canchasData] = await Promise.all([
-                    ConfiguracionService.getAll(),
-                    CanchaService.getAll({ type }) // Filter by type
-                ]);
-                setConfig(configData);
-                setCanchas(canchasData);
-            } catch (error) {
-                console.error("Error fetching initial data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [type]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [configData, canchasData] = await Promise.all([
+                ConfiguracionService.getAll(),
+                CanchaService.getAll({ type }) // Filter by type
+            ]);
+            setConfig(configData);
+            setCanchas(canchasData);
+        } catch (error) {
+            console.error("Error fetching initial data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Reservation Fetch on Date or Canchas change
     useEffect(() => {
@@ -108,6 +113,22 @@ const ReservaPage = ({ type }) => {
         setSelectedReserva(null);
     };
 
+    const handleCanchaAdded = () => {
+        fetchData(); // Refresh canchas
+        setCanchaModalOpen(false);
+    };
+
+    const handleCanchaDeleted = async (id) => {
+        if (!window.confirm('¿Estás seguro de eliminar esta cancha?')) return;
+        try {
+            await CanchaService.delete(id);
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting cancha:', error);
+            alert('Error al eliminar cancha');
+        }
+    };
+
     const isSlotOccupied = (canchaId, startTime) => {
         return reservas.some(r => r.cancha_id === canchaId && r.hora_inicio.slice(0,5) === startTime);
     };
@@ -131,14 +152,24 @@ const ReservaPage = ({ type }) => {
                         Duración de turno: {type === 'PADEL' ? config?.DURACION_PADEL : config?.DURACION_FUTBOL} min
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700">Fecha:</label>
-                    <input 
-                        type="date" 
-                        value={selectedDate} 
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                    />
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700">Fecha:</label>
+                        <input 
+                            type="date" 
+                            value={selectedDate} 
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        />
+                    </div>
+                    {isAdmin && (
+                        <button
+                            onClick={() => setCanchaModalOpen(true)}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none shadow-sm"
+                        >
+                            + Agregar Cancha
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -151,6 +182,8 @@ const ReservaPage = ({ type }) => {
                     isSlotOccupied={isSlotOccupied}
                     getReservaForSlot={getReservaForSlot}
                     selectedDate={selectedDate}
+                    isAdmin={isAdmin}
+                    onDeleteCancha={handleCanchaDeleted}
                 />
             )}
 
@@ -172,6 +205,28 @@ const ReservaPage = ({ type }) => {
                     onClose={() => setPagoModalOpen(false)}
                     onPagoSuccess={handleReservaSuccess}
                 />
+            )}
+
+            {/* Modal para Agregar Cancha */}
+            {canchaModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6 relative">
+                        <button
+                            onClick={() => setCanchaModalOpen(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+                        >
+                            <span className="sr-only">Cerrar</span>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <CanchaForm 
+                            onCanchaAdded={handleCanchaAdded} 
+                            defaultType={type}
+                            onClose={() => setCanchaModalOpen(false)}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

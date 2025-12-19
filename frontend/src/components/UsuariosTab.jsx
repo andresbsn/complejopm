@@ -62,11 +62,12 @@ const UsuariosTab = () => {
             {/* Create User Form */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Crear Nuevo Usuario</h3>
-                <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6" autoComplete="off">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
                         <input
                             type="text" required
+                            autoComplete="off"
                             value={nombre} onChange={(e) => setNombre(e.target.value)}
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-2 px-3 border"
                         />
@@ -75,6 +76,7 @@ const UsuariosTab = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Usuario (Login)</label>
                         <input
                             type="text" required
+                            autoComplete="off"
                             value={username} onChange={(e) => setUsername(e.target.value)}
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-2 px-3 border"
                         />
@@ -83,6 +85,7 @@ const UsuariosTab = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                         <input
                             type="password" required
+                            autoComplete="new-password"
                             value={password} onChange={(e) => setPassword(e.target.value)}
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-2 px-3 border"
                         />

@@ -14,11 +14,11 @@ const Layout = ({ children }) => {
 
   const allNavItems = [
     { name: 'Dashboard', path: '/', icon: '📊' },
-    { name: 'Productos', path: '/productos', icon: '📦' },
+    { name: 'Productos', path: '/productos', icon: '📦', adminOnly: true },
     { name: 'Proveedores', path: '/proveedores', icon: '🏢', adminOnly: true },
     { name: 'Ventas', path: '/ventas', icon: '💰' },
     { name: 'Reportes', path: '/reportes', icon: '📈', adminOnly: true },
-    { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
+    // { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
     { name: 'Reservas Padel', path: '/reservas/padel', icon: '🎾' },
     { name: 'Reservas Futbol', path: '/reservas/futbol', icon: '🥅' },
     { name: 'Jugadores', path: '/jugadores', icon: '👥' },
