@@ -13,6 +13,16 @@ const UserModel = {
             [username, password, nombre, rol || 'user']
         );
         return result.rows[0];
+    },
+
+    async getAll() {
+        const result = await pool.query('SELECT id, username, nombre, rol FROM usuarios ORDER BY id ASC');
+        return result.rows;
+    },
+
+    async delete(id) {
+        const result = await pool.query('DELETE FROM usuarios WHERE id = $1 RETURNING id', [id]);
+        return result.rows[0];
     }
 };
 
