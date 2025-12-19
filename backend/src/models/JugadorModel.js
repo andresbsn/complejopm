@@ -13,7 +13,14 @@ const JugadorModel = {
     },
 
     async getAll() {
-        const query = 'SELECT * FROM jugadores ORDER BY nombre ASC';
+        const query = `
+            SELECT j.*, 
+            COALESCE(SUM(CASE WHEN m.tipo = 'DEBE' THEN m.monto ELSE -m.monto END), 0) as saldo
+            FROM jugadores j
+            LEFT JOIN movimientos_cuenta m ON j.id = m.jugador_id
+            GROUP BY j.id
+            ORDER BY j.nombre ASC
+        `;
         const result = await pool.query(query);
         return result.rows;
     },

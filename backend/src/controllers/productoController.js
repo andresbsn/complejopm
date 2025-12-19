@@ -27,11 +27,20 @@ const productoController = {
 
     create: async (req, res) => {
         try {
-            const { nombre, categoria, precio, stock } = req.body;
+            const {
+                nombre, categoria, precio, stock,
+                stock_minimo, precio_venta, costo,
+                proveedor_id, estado
+            } = req.body;
+
             if (!nombre || !precio) {
                 return res.status(400).json({ error: 'Nombre y precio son requeridos' });
             }
-            const newProducto = await ProductoModel.create({ nombre, categoria, precio, stock });
+            const newProducto = await ProductoModel.create({
+                nombre, categoria, precio, stock,
+                stock_minimo, precio_venta, costo,
+                proveedor_id, estado
+            });
             res.status(201).json(newProducto);
         } catch (error) {
             console.error(error);
@@ -42,8 +51,18 @@ const productoController = {
     update: async (req, res) => {
         try {
             const { id } = req.params;
-            const { nombre, categoria, precio, stock } = req.body;
-            const updatedProducto = await ProductoModel.update(id, { nombre, categoria, precio, stock });
+            const {
+                nombre, categoria, precio, stock,
+                stock_minimo, precio_venta, costo,
+                proveedor_id, estado
+            } = req.body;
+
+            const updatedProducto = await ProductoModel.update(id, {
+                nombre, categoria, precio, stock,
+                stock_minimo, precio_venta, costo,
+                proveedor_id, estado
+            });
+
             if (!updatedProducto) {
                 return res.status(404).json({ error: 'Producto no encontrado' });
             }

@@ -10,10 +10,13 @@ import Layout from './components/Layout';
 import VentasPage from './components/VentasPage';
 import ConfiguracionPage from './components/ConfiguracionPage';
 import JugadoresPage from './components/JugadoresPage';
+import ProveedoresPage from './components/ProveedoresPage';
+import ReportesPage from './components/ReportesPage';
 import Dashboard from './components/Dashboard';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './components/LoginPage';
 import PrivateRoute from './components/PrivateRoute';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -32,25 +35,49 @@ function App() {
           
           <Route path="/canchas" element={
             <PrivateRoute>
-              <Layout>
-                <div className="space-y-6">
-                  <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <h2 className="text-xl font-semibold mb-4 text-gray-800">Gestionar Canchas</h2>
-                    <CanchaForm onCanchaAdded={() => window.location.reload()} />
+              <AdminRoute>
+                <Layout>
+                  <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                      <h2 className="text-xl font-semibold mb-4 text-gray-800">Gestionar Canchas</h2>
+                      <CanchaForm onCanchaAdded={() => window.location.reload()} />
+                    </div>
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                      <CanchaList />
+                    </div>
                   </div>
-                  <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <CanchaList />
-                  </div>
-                </div>
-              </Layout>
+                </Layout>
+              </AdminRoute>
             </PrivateRoute>
           } />
           
           <Route path="/productos" element={
             <PrivateRoute>
-              <Layout>
-                <ProductosPage />
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <ProductosPage />
+                </Layout>
+              </AdminRoute>
+            </PrivateRoute>
+          } />
+
+          <Route path="/proveedores" element={
+            <PrivateRoute>
+              <AdminRoute>
+                <Layout>
+                  <ProveedoresPage />
+                </Layout>
+              </AdminRoute>
+            </PrivateRoute>
+          } />
+
+          <Route path="/reportes" element={
+            <PrivateRoute>
+              <AdminRoute>
+                <Layout>
+                  <ReportesPage />
+                </Layout>
+              </AdminRoute>
             </PrivateRoute>
           } />
           
@@ -95,9 +122,11 @@ function App() {
           
           <Route path="/configuracion" element={
             <PrivateRoute>
-              <Layout>
-                <ConfiguracionPage />
-              </Layout>
+              <AdminRoute>
+                <Layout>
+                  <ConfiguracionPage />
+                </Layout>
+              </AdminRoute>
             </PrivateRoute>
           } />
 

@@ -6,21 +6,26 @@ const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const isAdmin = user?.rol === 'admin';
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const navItems = [
+  const allNavItems = [
     { name: 'Dashboard', path: '/', icon: '📊' },
     { name: 'Productos', path: '/productos', icon: '📦' },
+    { name: 'Proveedores', path: '/proveedores', icon: '🏢', adminOnly: true },
     { name: 'Ventas', path: '/ventas', icon: '💰' },
-    { name: 'Canchas', path: '/canchas', icon: '⚽' },
+    { name: 'Reportes', path: '/reportes', icon: '📈', adminOnly: true },
+    { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
     { name: 'Reservas Padel', path: '/reservas/padel', icon: '🎾' },
     { name: 'Reservas Futbol', path: '/reservas/futbol', icon: '🥅' },
     { name: 'Jugadores', path: '/jugadores', icon: '👥' },
-    { name: 'Configuración', path: '/configuracion', icon: '⚙️' },
+    { name: 'Configuración', path: '/configuracion', icon: '⚙️', adminOnly: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900">

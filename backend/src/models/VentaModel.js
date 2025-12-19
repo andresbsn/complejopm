@@ -7,9 +7,10 @@ const VentaModel = {
         try {
             await client.query('BEGIN');
 
-            const { items, total, metodo_pago } = ventaData;
+            const { items, total, metodo_pago, jugador_id } = ventaData;
 
             // 1. Insertar la venta
+            // Nota: Si método de pago es cuenta_corriente, registramos la venta igual.
             const ventaQuery = `
                 INSERT INTO ventas_cantina (total, metodo_pago)
                 VALUES ($1, $2)
@@ -17,6 +18,22 @@ const VentaModel = {
             `;
             const ventaResult = await client.query(ventaQuery, [total, metodo_pago]);
             const venta = ventaResult.rows[0];
+
+            // 1.5 Si es cuenta corriente, registrar movimiento en cuenta del jugador
+            if (metodo_pago === 'cuenta_corriente') {
+                if (!jugador_id) throw new Error('Se requiere jugador_id para cuenta corriente');
+
+                const movimientoQuery = `
+                    INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id)
+                    VALUES ($1, 'DEBE', $2, $3, $4)
+                `;
+                await client.query(movimientoQuery, [
+                    jugador_id,
+                    total,
+                    `Compra en Cantina (Venta #${venta.id})`,
+                    venta.id
+                ]);
+            }
 
             // 2. Insertar detalles y actualizar stock
             for (const item of items) {

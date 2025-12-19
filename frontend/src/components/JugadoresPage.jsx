@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { JugadorService } from '../services/api';
+import CuentaCorrienteModal from './CuentaCorrienteModal';
 
 const JugadoresPage = () => {
     const [jugadores, setJugadores] = useState([]);
@@ -8,6 +9,7 @@ const JugadoresPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newJugador, setNewJugador] = useState({ nombre: '', telefono: '', email: '' });
     const [creating, setCreating] = useState(false);
+    const [selectedJugador, setSelectedJugador] = useState(null);
 
     useEffect(() => {
         fetchJugadores();
@@ -95,6 +97,10 @@ const JugadoresPage = () => {
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nombre</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Teléfono</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Saldo</th>
+                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                            <span className="sr-only">Acciones</span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -112,6 +118,19 @@ const JugadoresPage = () => {
                                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{jugador.nombre}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{jugador.telefono || '-'}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{jugador.email || '-'}</td>
+                                                <td className={`whitespace-nowrap px-3 py-4 text-sm font-semibold ${
+                                                    parseFloat(jugador.saldo) > 0 ? 'text-red-600' : 'text-green-600'
+                                                }`}>
+                                                    ${parseFloat(jugador.saldo || 0).toFixed(2)}
+                                                </td>
+                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    <button 
+                                                        onClick={() => setSelectedJugador(jugador)}
+                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                    >
+                                                        Ver Cuenta
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -125,6 +144,7 @@ const JugadoresPage = () => {
             {/* Modal de Creación */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    {/* ... (Create Player Modal content - unchanged) ... */}
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsModalOpen(false)}></div>
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
@@ -183,6 +203,16 @@ const JugadoresPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {selectedJugador && (
+                <CuentaCorrienteModal 
+                    jugador={selectedJugador} 
+                    onClose={() => {
+                        setSelectedJugador(null);
+                        fetchJugadores(searchTerm); // Refresh list to update balance
+                    }} 
+                />
             )}
         </div>
     );

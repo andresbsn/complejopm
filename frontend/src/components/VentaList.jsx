@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VentaService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const VentaList = ({ refreshTrigger }) => {
     const [ventas, setVentas] = useState([]);
@@ -8,6 +9,10 @@ const VentaList = ({ refreshTrigger }) => {
     const [detalles, setDetalles] = useState([]);
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
+
+    const totalVentas = ventas.reduce((acc, venta) => acc + parseFloat(venta.total), 0);
 
     useEffect(() => {
         cargarVentas();
@@ -17,13 +22,22 @@ const VentaList = ({ refreshTrigger }) => {
         try {
             // Si seleccionamos fecha hasta, queremos que incluya todo ese día.
             // Una forma simple es agregar la hora 23:59:59 si es una fecha YYYY-MM-DD
+            let desde = fechaDesde;
             let hasta = fechaHasta;
+
+            if (!isAdmin) {
+                // Si no es admin, forzamos a mostrar solo hoy
+                const today = new Date().toISOString().split('T')[0];
+                desde = today;
+                hasta = today;
+            }
+
             if (hasta) {
                 hasta = `${hasta} 23:59:59`;
             }
 
             const data = await VentaService.getAll({ 
-                fechaDesde, 
+                fechaDesde: desde, 
                 fechaHasta: hasta 
             });
             setVentas(data);
@@ -48,6 +62,7 @@ const VentaList = ({ refreshTrigger }) => {
 
     return (
         <div className="space-y-6">
+            {isAdmin ? (
             <div className="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 items-end">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
@@ -74,6 +89,11 @@ const VentaList = ({ refreshTrigger }) => {
                     Limpiar Filtros
                 </button>
             </div>
+            ) : (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p className="text-blue-800 font-medium">Mostrando ventas de hoy ({new Date().toLocaleDateString()})</p>
+                </div>
+            )}
 
             <div className="overflow-hidden">
                 <div className="overflow-x-auto">

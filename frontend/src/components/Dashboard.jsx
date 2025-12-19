@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-    const modules = [
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
+
+    const allModules = [
         {
             name: 'Reservas Padel',
             path: '/reservas/padel',
@@ -43,16 +47,20 @@ const Dashboard = () => {
             path: '/canchas',
             icon: '⚽',
             color: 'bg-teal-500',
-            description: 'Configurar canchas'
+            description: 'Configurar canchas',
+            adminOnly: true
         },
         {
             name: 'Configuración',
             path: '/configuracion',
             icon: '⚙️',
             color: 'bg-gray-500',
-            description: 'Ajustes del sistema'
+            description: 'Ajustes del sistema',
+            adminOnly: true
         }
     ];
+
+    const modules = allModules.filter(module => !module.adminOnly || isAdmin);
 
     return (
         <div className="container mx-auto px-4 py-8">

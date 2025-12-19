@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -104,6 +104,58 @@ export const JugadorService = {
     },
     create: async (data) => {
         const response = await api.post('/jugadores', data);
+        return response.data;
+    }
+};
+
+export const CuentaService = {
+    getMovimientos: async (jugadorId) => {
+        const response = await api.get(`/cuenta/${jugadorId}`);
+        return response.data;
+    },
+    addMovimiento: async (data) => {
+        const response = await api.post('/cuenta', data);
+        return response.data;
+    }
+};
+
+export const ProveedorService = {
+    async getAll() {
+        const response = await api.get('/proveedores');
+        return response.data;
+    },
+    async create(data) {
+        const response = await api.post('/proveedores', data);
+        return response.data;
+    },
+    async update(id, data) {
+        const response = await api.put(`/proveedores/${id}`, data);
+        return response.data;
+    },
+    async delete(id) {
+        const response = await api.delete(`/proveedores/${id}`);
+        return response.data;
+    },
+    async getMovimientos(id) {
+        const response = await api.get(`/proveedores/${id}/cuenta`);
+        return response.data;
+    },
+    async addMovimiento(data) {
+        const response = await api.post('/proveedores/movimiento', data);
+        return response.data;
+    }
+};
+
+export const ReporteService = {
+    async getVentas(filters) {
+        // filters: { fechaDesde, fechaHasta, tipo, metodoPago }
+        const params = new URLSearchParams();
+        if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde);
+        if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta);
+        if (filters.tipo) params.append('tipo', filters.tipo);
+        if (filters.metodoPago) params.append('metodoPago', filters.metodoPago);
+
+        const response = await api.get(`/reportes/ventas?${params.toString()}`);
         return response.data;
     }
 };

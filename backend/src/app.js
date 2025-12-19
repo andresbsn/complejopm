@@ -8,6 +8,9 @@ const ventaRoutes = require('./routes/ventaRoutes');
 const configuracionRoutes = require('./routes/configuracionRoutes');
 const authRoutes = require('./routes/authRoutes');
 const jugadorRoutes = require('./routes/jugadorRoutes');
+const cuentaRoutes = require('./routes/cuentaRoutes');
+const proveedorRoutes = require('./routes/proveedorRoutes');
+const reporteRoutes = require('./routes/reporteRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
@@ -20,12 +23,15 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 
 // Rutas Protegidas
-app.use('/api/turnos', authMiddleware, turnoRoutes);
 app.use('/api/canchas', authMiddleware, canchaRoutes);
+app.use('/api/turnos', authMiddleware, turnoRoutes);
 app.use('/api/productos', authMiddleware, productoRoutes);
 app.use('/api/ventas', authMiddleware, ventaRoutes);
 app.use('/api/configuracion', authMiddleware, configuracionRoutes);
 app.use('/api/jugadores', authMiddleware, jugadorRoutes);
+app.use('/api/cuentas', authMiddleware, cuentaRoutes);
+app.use('/api/proveedores', authMiddleware, proveedorRoutes);
+app.use('/api/reportes', authMiddleware, reporteRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
