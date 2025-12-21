@@ -17,9 +17,14 @@ const PagoModel = {
             const pagoResult = await client.query(pagoQuery, [turno_id, monto, metodo]);
             const pago = pagoResult.rows[0];
 
-            // 2. Actualizar estado del turno si es necesario (opcional, por ahora marcamos pagado si cubre el total)
+            // 2. Actualizar estado del turno si es necesario
             // Primero obtenemos el turno para saber el total
-            const turnoQuery = 'SELECT monto_total FROM turnos WHERE id = $1';
+            const turnoQuery = `
+                SELECT t.monto_total, c.tipo as cancha_tipo 
+                FROM turnos t
+                JOIN canchas c ON t.cancha_id = c.id
+                WHERE t.id = $1
+            `;
             const turnoResult = await client.query(turnoQuery, [turno_id]);
             const turno = turnoResult.rows[0];
 

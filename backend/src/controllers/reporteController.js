@@ -131,7 +131,16 @@ const reporteController = {
                 SELECT * FROM (
                     SELECT id, fecha, 'VENTA' as tipo, 'Venta Cantina #' || id as descripcion, metodo_pago as metodo, total as monto FROM ventas_cantina
                     UNION ALL
-                    SELECT id, fecha_pago as fecha, 'RESERVA' as tipo, 'Pago Reserva Turno #' || turno_id as descripcion, metodo, monto FROM pagos
+                    SELECT 
+                        p.id, 
+                        p.fecha_pago as fecha, 
+                        'RESERVA' as tipo, 
+                        'Pago Turno ' || CASE WHEN c.tipo = 'PADEL' THEN 'Padel' ELSE 'Fútbol' END || ' ' || c.nombre as descripcion, 
+                        p.metodo, 
+                        p.monto 
+                    FROM pagos p
+                    JOIN turnos t ON p.turno_id = t.id
+                    JOIN canchas c ON t.cancha_id = c.id
                 ) as combined
                 WHERE 1=1
             `;

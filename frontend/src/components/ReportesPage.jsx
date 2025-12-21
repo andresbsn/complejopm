@@ -161,8 +161,6 @@ const ReportesPage = () => {
                             <option value="">Todos</option>
                             <option value="efectivo">Efectivo</option>
                             <option value="transferencia">Transferencia</option>
-                            <option value="debito">Débito</option>
-                            <option value="credito">Crédito</option>
                             <option value="qr">QR</option>
                             <option value="cuenta_corriente">Cuenta Corriente</option>
                         </select>

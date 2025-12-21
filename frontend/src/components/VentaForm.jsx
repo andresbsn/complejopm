@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductoService, VentaService, JugadorService } from '../services/api';
+import SearchableSelect from './SearchableSelect';
 
 const VentaForm = ({ onVentaCreated }) => {
     const [productos, setProductos] = useState([]);
@@ -10,7 +11,6 @@ const VentaForm = ({ onVentaCreated }) => {
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [jugadores, setJugadores] = useState([]);
     const [selectedJugador, setSelectedJugador] = useState(null);
-    const [busquedaJugador, setBusquedaJugador] = useState('');
 
     useEffect(() => {
         cargarProductos();
@@ -107,6 +107,7 @@ const VentaForm = ({ onVentaCreated }) => {
             setMensaje({ type: 'success', text: 'Venta realizada con éxito' });
             setCarrito([]);
             setMetodoPago('efectivo');
+            setSelectedJugador(null);
             cargarProductos(); // Recargar para actualizar stock
             if (onVentaCreated) onVentaCreated();
             setTimeout(() => setMensaje(null), 3000);
@@ -236,8 +237,6 @@ const VentaForm = ({ onVentaCreated }) => {
                         >
                             <option value="efectivo">Efectivo</option>
                             <option value="transferencia">Transferencia</option>
-                            <option value="debito">Débito</option>
-                            <option value="credito">Crédito</option>
                             <option value="qr">QR</option>
                             <option value="cuenta_corriente">Cuenta Corriente</option>
                         </select>
@@ -246,19 +245,14 @@ const VentaForm = ({ onVentaCreated }) => {
                     {metodoPago === 'cuenta_corriente' && (
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente / Jugador</label>
-                            <select
+                            <SearchableSelect
+                                options={jugadores}
                                 value={selectedJugador ? selectedJugador.id : ''}
-                                onChange={(e) => {
-                                    const jugador = jugadores.find(j => j.id === parseInt(e.target.value));
-                                    setSelectedJugador(jugador);
-                                }}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            >
-                                <option value="">Seleccionar Jugador...</option>
-                                {jugadores.map(j => (
-                                    <option key={j.id} value={j.id}>{j.nombre}</option>
-                                ))}
-                            </select>
+                                onChange={(option) => setSelectedJugador(option)}
+                                labelKey="nombre"
+                                valueKey="id"
+                                placeholder="Buscar Jugador..."
+                            />
                             <p className="text-xs text-gray-500 mt-1">
                                 Se registrará una deuda en la cuenta del jugador seleccionado.
                             </p>

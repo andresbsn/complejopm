@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CuentaService } from '../services/api';
+import { CuentaService, VentaService } from '../services/api';
 
 const CuentaCorrienteModal = ({ jugador, onClose }) => {
     const [movimientos, setMovimientos] = useState([]);
@@ -10,6 +10,11 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
     const [monto, setMonto] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [metodoPago, setMetodoPago] = useState('efectivo');
+    
+    // Details viewing state
+    const [expandedMovimientoId, setExpandedMovimientoId] = useState(null);
+    const [detailsCache, setDetailsCache] = useState({});
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
         if (jugador) {
@@ -57,6 +62,32 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
         }
     };
 
+    const toggleDetails = async (movimiento) => {
+        if (expandedMovimientoId === movimiento.id) {
+            setExpandedMovimientoId(null);
+            return;
+        }
+
+        // Only expand if it's a Venta (check referencing_id or description)
+        if (!movimiento.referencia_id || !movimiento.descripcion.includes('Venta')) {
+             return; // Or show alert that no details available?
+        }
+
+        setExpandedMovimientoId(movimiento.id);
+
+        if (!detailsCache[movimiento.referencia_id]) {
+            setLoadingDetails(true);
+            try {
+                const details = await VentaService.getDetalles(movimiento.referencia_id);
+                setDetailsCache(prev => ({ ...prev, [movimiento.referencia_id]: details }));
+            } catch (error) {
+                console.error("Error fetching venta details", error);
+            } finally {
+                setLoadingDetails(false);
+            }
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
             <div className="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
@@ -96,7 +127,7 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
 
                 {/* Formulario de Transacción */}
                 {showForm && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+                     <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
                         <h4 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-3">
                             {tipoMovimiento === 'DEBE' ? 'Registrar Nueva Deuda' : 'Registrar Nuevo Pago'}
                         </h4>
@@ -122,8 +153,6 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                                     >
                                         <option value="efectivo">Efectivo</option>
                                         <option value="transferencia">Transferencia</option>
-                                        <option value="debito">Débito</option>
-                                        <option value="credito">Crédito</option>
                                         <option value="qr">QR</option>
                                     </select>
                                 </div>
@@ -169,35 +198,75 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                                 <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
                                 <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                                 <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Monto</th>
+                                <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {loading ? (
-                                <tr><td colSpan="4" className="text-center py-4">Cargando...</td></tr>
+                                <tr><td colSpan="5" className="text-center py-4">Cargando...</td></tr>
                             ) : movimientos.length === 0 ? (
-                                <tr><td colSpan="4" className="text-center py-4 text-gray-500">Sin movimientos registrados.</td></tr>
+                                <tr><td colSpan="5" className="text-center py-4 text-gray-500">Sin movimientos registrados.</td></tr>
                             ) : (
                                 movimientos.map((mov) => (
-                                    <tr key={mov.id}>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            {new Date(mov.fecha).toLocaleString()}
-                                        </td>
-                                        <td className="px-3 py-4 text-sm text-gray-500">
-                                            {mov.descripcion || '-'}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                                mov.tipo === 'DEBE' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                    <React.Fragment key={mov.id}>
+                                        <tr className="hover:bg-gray-50">
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                {new Date(mov.fecha).toLocaleString()}
+                                            </td>
+                                            <td className="px-3 py-4 text-sm text-gray-500">
+                                                {mov.descripcion || '-'}
+                                                {mov.referencia_id && (
+                                                    <span className="ml-2 text-xs text-indigo-500 cursor-pointer hover:underline" onClick={() => toggleDetails(mov)}>
+                                                        {expandedMovimientoId === mov.id ? '(Ocultar Detalles)' : '(Ver Detalles)'}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                                                    mov.tipo === 'DEBE' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {mov.tipo}
+                                                </span>
+                                            </td>
+                                            <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
+                                                mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
                                             }`}>
-                                                {mov.tipo}
-                                            </span>
-                                        </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
-                                            mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
-                                        }`}>
-                                            ${parseFloat(mov.monto).toFixed(2)}
-                                        </td>
-                                    </tr>
+                                                ${parseFloat(mov.monto).toFixed(2)}
+                                            </td>
+                                            <td className="px-3 py-4 text-right text-sm">
+                                                {mov.referencia_id && (
+                                                    <button onClick={() => toggleDetails(mov)} className="text-gray-400 hover:text-indigo-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                        {expandedMovimientoId === mov.id && (
+                                            <tr className="bg-gray-50">
+                                                <td colSpan="5" className="px-6 py-4">
+                                                    {loadingDetails && !detailsCache[mov.referencia_id] ? (
+                                                        <div className="text-sm text-gray-500">Cargando detalles...</div>
+                                                    ) : detailsCache[mov.referencia_id] ? (
+                                                        <div className="bg-white border rounded-md p-3 max-w-lg">
+                                                            <h5 className="text-xs font-bold text-gray-700 uppercase mb-2">Items de la Venta:</h5>
+                                                            <ul className="text-sm space-y-1">
+                                                                {detailsCache[mov.referencia_id].map((detalle, idx) => (
+                                                                    <li key={idx} className="flex justify-between border-b last:border-0 border-gray-100 pb-1">
+                                                                        <span>{detalle.producto_nombre} <span className="text-gray-400">x{detalle.cantidad}</span></span>
+                                                                        <span>${detalle.subtotal}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-gray-500">No hay detalles disponibles.</div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>
