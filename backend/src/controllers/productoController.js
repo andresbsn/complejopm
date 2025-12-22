@@ -83,6 +83,12 @@ const productoController = {
             res.json({ message: 'Producto eliminado correctamente', producto: deletedProducto });
         } catch (error) {
             console.error(error);
+            // Check if it's a foreign key constraint error
+            if (error.code === '23503') {
+                return res.status(400).json({
+                    error: 'No se puede eliminar el producto porque tiene ventas asociadas'
+                });
+            }
             res.status(500).json({ error: 'Error al eliminar el producto' });
         }
     }

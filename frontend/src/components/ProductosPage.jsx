@@ -45,12 +45,23 @@ const ProductosPage = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
+        const producto = productos.find(p => p.id === id);
+        if (!producto) return;
+        
+        const nuevoEstado = producto.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+        const accion = nuevoEstado === 'INACTIVO' ? 'inactivar' : 'reactivar';
+        
+        if (!window.confirm(`¿Estás seguro de ${accion} este producto?`)) return;
+        
         try {
-            await ProductoService.delete(id);
+            // Update product to toggle estado
+            await ProductoService.update(id, {
+                ...producto,
+                estado: nuevoEstado
+            });
             fetchData();
         } catch (error) {
-            alert('Error al eliminar: ' + error.message);
+            alert(`Error al ${accion}: ` + error.message);
         }
     };
 

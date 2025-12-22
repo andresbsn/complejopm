@@ -50,13 +50,16 @@ const ReservaGrid = ({
                                 const occupied = isSlotOccupied(cancha.id, slot.start);
                                 const reserva = getReservaForSlot(cancha.id, slot.start);
                                 
+                                // Don't show cancelled turnos
+                                const isCancelled = reserva && reserva.estado === 'cancelado';
+                                
                                 const slotDateTime = new Date(`${selectedDate}T${slot.start}:00`);
                                 const now = new Date();
                                 const isPast = slotDateTime < now;
 
                                 return (
                                     <td key={`${cancha.id}-${slot.start}`} className="px-2 py-2 border-r last:border-r-0 relative h-16">
-                                        {occupied && reserva ? (
+                                        {occupied && reserva && !isCancelled ? (
                                             <button
                                                 onClick={() => onSlotClick(cancha, slot, reserva)} // Pass reserva
                                                 className={`

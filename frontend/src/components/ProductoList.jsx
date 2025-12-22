@@ -62,9 +62,9 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
                                     </button>
                                     <button 
                                         onClick={() => onDelete(producto.id)}
-                                        className="text-red-600 hover:text-red-900 transition-colors duration-150"
+                                        className="text-orange-600 hover:text-orange-900 transition-colors duration-150"
                                     >
-                                        Eliminar
+                                        {producto.estado === 'ACTIVO' ? 'Inactivar' : 'Activar'}
                                     </button>
                                 </td>
                             </tr>
