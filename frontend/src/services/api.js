@@ -108,13 +108,14 @@ export const JugadorService = {
     }
 };
 
+
 export const CuentaService = {
     getMovimientos: async (jugadorId) => {
-        const response = await api.get(`/cuenta/${jugadorId}`);
+        const response = await api.get(`/cuentas/${jugadorId}`);
         return response.data;
     },
     addMovimiento: async (data) => {
-        const response = await api.post('/cuenta', data);
+        const response = await api.post('/cuentas', data);
         return response.data;
     }
 };
