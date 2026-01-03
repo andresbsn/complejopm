@@ -1,19 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { JugadorService } from '../services/api';
+import { JugadorService, CategoriaService } from '../services/api';
 import CuentaCorrienteModal from './CuentaCorrienteModal';
 
 const JugadoresPage = () => {
     const [jugadores, setJugadores] = useState([]);
+    const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newJugador, setNewJugador] = useState({ nombre: '', telefono: '', email: '' });
+    const [newJugador, setNewJugador] = useState({ nombre: '', telefono: '', email: '', categoria_id: '' });
     const [creating, setCreating] = useState(false);
     const [selectedJugador, setSelectedJugador] = useState(null);
 
     useEffect(() => {
-        fetchJugadores();
+        fetchData();
     }, []);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [jugadoresData, categoriasData] = await Promise.all([
+                JugadorService.getAll(),
+                CategoriaService.getAll()
+            ]);
+            setJugadores(jugadoresData);
+            setCategorias(categoriasData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchJugadores = async (search = '') => {
         setLoading(true);
@@ -48,7 +65,7 @@ const JugadoresPage = () => {
         try {
             await JugadorService.create(newJugador);
             setIsModalOpen(false);
-            setNewJugador({ nombre: '', telefono: '', email: '' });
+            setNewJugador({ nombre: '', telefono: '', email: '', categoria_id: '' });
             fetchJugadores(searchTerm);
         } catch (error) {
             alert('Error al crear jugador');
@@ -97,6 +114,7 @@ const JugadoresPage = () => {
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nombre</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Teléfono</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Categoría</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Saldo</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                             <span className="sr-only">Acciones</span>
@@ -118,6 +136,7 @@ const JugadoresPage = () => {
                                                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{jugador.nombre}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{jugador.telefono || '-'}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{jugador.email || '-'}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{jugador.categoria_descripcion || '-'}</td>
                                                 <td className={`whitespace-nowrap px-3 py-4 text-sm font-semibold ${
                                                     parseFloat(jugador.saldo) > 0 ? 'text-red-600' : 'text-green-600'
                                                 }`}>
@@ -173,13 +192,25 @@ const JugadoresPage = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Email</label>
                                             <input
                                                 type="email"
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                 value={newJugador.email}
                                                 onChange={e => setNewJugador({ ...newJugador, email: e.target.value })}
                                             />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                                            <select
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                value={newJugador.categoria_id}
+                                                onChange={e => setNewJugador({ ...newJugador, categoria_id: e.target.value })}
+                                            >
+                                                <option value="">Seleccionar Categoría</option>
+                                                {categorias.map(cat => (
+                                                    <option key={cat.id} value={cat.id}>{cat.descripcion}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

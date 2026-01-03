@@ -6,12 +6,18 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     const [monto, setMonto] = useState(saldoPendiente);
     const [metodo, setMetodo] = useState('efectivo');
     const [loading, setLoading] = useState(false);
+    const [showCancelOptions, setShowCancelOptions] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post(`/turnos/${turno.id}/pagos`, { monto, metodo });
+            // Extract the real ID from the virtual ID for fixed turnos (format: fijo_123)
+            const turnoId = turno.id.toString().startsWith('fijo_') 
+                ? turno.id.toString().replace('fijo_', '') 
+                : turno.id;
+            
+            await api.post(`/turnos/${turnoId}/pagos`, { monto, metodo });
             onPagoSuccess();
             onClose();
         } catch (error) {
@@ -23,30 +29,67 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     };
 
     const handleCancel = async () => {
+        // For fixed turnos, show options
+        if (turno.es_fijo || turno.estado === 'fijo') {
+            setShowCancelOptions(true);
+            return;
+        }
+        
+        // For regular turnos, cancel directly
         if (!window.confirm('¿Está seguro de que desea cancelar este turno?')) return;
         
         setLoading(true);
         try {
-            if (turno.es_fijo) {
-                // Si es fijo, creamos un turno real con estado 'cancelado' para esta fecha
-                await TurnoService.create({
-                    cancha_id: turno.cancha_id,
-                    fecha: turno.fecha,
-                    hora_inicio: turno.hora_inicio,
-                    hora_fin: turno.hora_fin,
-                    cliente_nombre: turno.cliente_nombre,
-                    cliente_telefono: turno.cliente_telefono,
-                    monto_total: turno.monto_total,
-                    estado: 'cancelado'
-                });
-            } else {
-                await TurnoService.updateStatus(turno.id, 'cancelado');
-            }
+            await TurnoService.updateStatus(turno.id, 'cancelado');
             onPagoSuccess(); // Refresca la lista
             onClose();
         } catch (error) {
             console.error('Error al cancelar turno:', error);
             alert('Error al cancelar el turno');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelToday = async () => {
+        setLoading(true);
+        try {
+            // Create a cancelled turno for this specific date
+            await TurnoService.create({
+                cancha_id: turno.cancha_id,
+                fecha: turno.fecha,
+                hora_inicio: turno.hora_inicio,
+                hora_fin: turno.hora_fin,
+                cliente_nombre: turno.cliente_nombre,
+                cliente_telefono: turno.cliente_telefono,
+                monto_total: turno.monto_total,
+                estado: 'cancelado'
+            });
+            setShowCancelOptions(false);
+            onPagoSuccess();
+            onClose();
+        } catch (error) {
+            console.error('Error al cancelar turno:', error);
+            alert('Error al cancelar el turno');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelPermanently = async () => {
+        if (!window.confirm('¿Está seguro de eliminar este turno fijo permanentemente? Esta acción no se puede deshacer.')) return;
+        
+        setLoading(true);
+        try {
+            // Extract the real ID from the virtual ID (format: fijo_123)
+            const fijoId = turno.id.toString().replace('fijo_', '');
+            await api.delete(`/turnos/fijos/${fijoId}`);
+            setShowCancelOptions(false);
+            onPagoSuccess();
+            onClose();
+        } catch (error) {
+            console.error('Error al eliminar turno fijo:', error);
+            alert('Error al eliminar el turno fijo');
         } finally {
             setLoading(false);
         }
@@ -127,6 +170,41 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                     </form>
                 </div>
             </div>
+
+            {/* Cancel Options Modal for Fixed Turnos */}
+            {showCancelOptions && (
+                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancelar Turno Fijo</h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Este es un turno fijo que se repite semanalmente. ¿Cómo deseas cancelarlo?
+                        </p>
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleCancelToday}
+                                disabled={loading}
+                                className="w-full py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Cancelar solo por hoy
+                            </button>
+                            <button
+                                onClick={handleCancelPermanently}
+                                disabled={loading}
+                                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Cancelar definitivamente
+                            </button>
+                            <button
+                                onClick={() => setShowCancelOptions(false)}
+                                disabled={loading}
+                                className="w-full py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                Volver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

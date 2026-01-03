@@ -14,4 +14,7 @@ router.post('/:id/pagos', TurnoController.registrarPago);
 // PATCH /api/turnos/:id/status
 router.patch('/:id/status', TurnoController.updateStatus);
 
+// DELETE /api/turnos/fijos/:id
+router.delete('/fijos/:id', TurnoController.deleteFijo);
+
 module.exports = router;

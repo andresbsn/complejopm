@@ -17,6 +17,8 @@ import { AuthProvider } from './context/AuthContext';
 import LoginPage from './components/LoginPage';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import TorneosPage from './components/TorneosPage';
+import TorneoDetailsPage from './components/TorneoDetailsPage';
 
 function App() {
   return (
@@ -134,6 +136,22 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <JugadoresPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+
+          <Route path="/torneos" element={
+            <PrivateRoute>
+              <Layout>
+                <TorneosPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+
+          <Route path="/torneos/:id" element={
+            <PrivateRoute>
+              <Layout>
+                <TorneoDetailsPage />
               </Layout>
             </PrivateRoute>
           } />

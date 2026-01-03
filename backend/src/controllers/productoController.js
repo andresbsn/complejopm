@@ -3,7 +3,11 @@ const ProductoModel = require('../models/ProductoModel');
 const productoController = {
     getAll: async (req, res) => {
         try {
-            const productos = await ProductoModel.getAll();
+            const filters = {};
+            if (req.query.estado) {
+                filters.estado = req.query.estado;
+            }
+            const productos = await ProductoModel.getAll(filters);
             res.json(productos);
         } catch (error) {
             console.error(error);

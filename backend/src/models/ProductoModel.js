@@ -2,15 +2,30 @@ const pool = require('../config/db');
 
 const ProductoModel = {
     // Obtener todos los productos
-    async getAll() {
+    async getAll(filters = {}) {
         // Includes join with proveedores for convenience
-        const query = `
+        let query = `
             SELECT p.*, pr.nombre as proveedor_nombre 
             FROM productos p
             LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
-            ORDER BY p.nombre ASC
         `;
-        const result = await pool.query(query);
+
+        const conditions = [];
+        const values = [];
+
+        // Filter by estado if specified
+        if (filters.estado) {
+            conditions.push(`p.estado = $${values.length + 1}`);
+            values.push(filters.estado);
+        }
+
+        if (conditions.length > 0) {
+            query += ` WHERE ${conditions.join(' AND ')}`;
+        }
+
+        query += ` ORDER BY p.nombre ASC`;
+
+        const result = await pool.query(query, values);
         return result.rows;
     },
 

@@ -130,11 +130,25 @@ const ReservaPage = ({ type }) => {
     };
 
     const isSlotOccupied = (canchaId, startTime) => {
-        return reservas.some(r => r.cancha_id === canchaId && r.hora_inicio.slice(0,5) === startTime);
+        return reservas.some(r => 
+            r.cancha_id === canchaId && 
+            r.hora_inicio.slice(0,5) === startTime &&
+            r.estado !== 'cancelado' // Exclude cancelled turnos
+        );
     };
 
     const getReservaForSlot = (canchaId, startTime) => {
-        return reservas.find(r => r.cancha_id === canchaId && r.hora_inicio.slice(0,5) === startTime);
+        // Filter to get all reservas for this slot
+        const slotReservas = reservas.filter(r => 
+            r.cancha_id === canchaId && 
+            r.hora_inicio.slice(0,5) === startTime
+        );
+        
+        // If multiple exist, prioritize non-cancelled ones
+        const activeReserva = slotReservas.find(r => r.estado !== 'cancelado');
+        
+        // Return active one if exists, otherwise return first (could be cancelled)
+        return activeReserva || slotReservas[0];
     };
 
     if (loading && !config) return <div className="p-8 text-center text-gray-500">Cargando...</div>;

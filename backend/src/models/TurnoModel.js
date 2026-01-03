@@ -3,30 +3,33 @@ const pool = require('../config/db');
 const TurnoModel = {
     // Crear un nuevo turno
     async create(data) {
-        const { cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total } = data;
+        const { cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado = 'confirmado' } = data;
 
-        // Validar superposición
-        const overlapQuery = `
-            SELECT id FROM turnos 
-            WHERE cancha_id = $1 
-            AND fecha = $2 
-            AND estado != 'cancelado'
-            AND (
-                (hora_inicio < $4 AND hora_fin > $3)
-            )
-        `;
-        const overlapResult = await pool.query(overlapQuery, [cancha_id, fecha, hora_inicio, hora_fin]);
+        // Solo validar superposición si NO es un turno cancelado
+        // Los turnos cancelados no ocupan el slot realmente
+        if (estado !== 'cancelado') {
+            const overlapQuery = `
+                SELECT id FROM turnos 
+                WHERE cancha_id = $1 
+                AND fecha = $2 
+                AND estado != 'cancelado'
+                AND (
+                    (hora_inicio < $4 AND hora_fin > $3)
+                )
+            `;
+            const overlapResult = await pool.query(overlapQuery, [cancha_id, fecha, hora_inicio, hora_fin]);
 
-        if (overlapResult.rows.length > 0) {
-            throw new Error('El turno se superpone con otro existente.');
+            if (overlapResult.rows.length > 0) {
+                throw new Error('El turno se superpone con otro existente.');
+            }
         }
 
         const query = `
-      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
-        const values = [cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total];
+        const values = [cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado];
         const result = await pool.query(query, values);
         return result.rows[0];
     },
@@ -74,7 +77,8 @@ const TurnoModel = {
         const diaSemana = new Date(fecha + 'T12:00:00').getDay();
 
         let queryFijos = `
-            SELECT rf.*, c.nombre as cancha_nombre, c.tipo as cancha_tipo
+            SELECT rf.*, c.nombre as cancha_nombre, c.tipo as cancha_tipo,
+            COALESCE((SELECT SUM(monto) FROM pagos WHERE turno_id = rf.id), 0) as monto_pagado
             FROM reservas_fijas rf
             JOIN canchas c ON rf.cancha_id = c.id
             WHERE rf.dia_semana = $1
@@ -92,20 +96,20 @@ const TurnoModel = {
         const turnosFinales = [...turnosReales];
 
         turnosFijos.forEach(fijo => {
-            // Verificar si ya existe un turno real que solape
+            // Verificar si ya existe un turno real que solape (incluyendo cancelados)
             const existeReal = turnosReales.some(real =>
                 real.cancha_id === fijo.cancha_id &&
                 real.hora_inicio === fijo.hora_inicio
             );
 
+            // Solo agregar el turno fijo si NO existe ningún turno real (ni siquiera cancelado)
             if (!existeReal) {
                 turnosFinales.push({
                     ...fijo,
                     id: `fijo_${fijo.id}`, // ID virtual para el frontend
                     fecha: fecha,
                     estado: 'fijo',
-                    es_fijo: true,
-                    monto_pagado: 0
+                    es_fijo: true
                 });
             }
         });
@@ -122,6 +126,13 @@ const TurnoModel = {
       UPDATE turnos SET estado = $1 WHERE id = $2 RETURNING *
     `;
         const result = await pool.query(query, [estado, id]);
+        return result.rows[0];
+    },
+
+    // Eliminar turno fijo permanentemente
+    async deleteFijo(id) {
+        const query = 'DELETE FROM reservas_fijas WHERE id = $1 RETURNING *';
+        const result = await pool.query(query, [id]);
         return result.rows[0];
     }
 };

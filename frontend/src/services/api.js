@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -37,8 +37,8 @@ export const TurnoService = {
 };
 
 export const ProductoService = {
-    getAll: async () => {
-        const response = await api.get('/productos');
+    getAll: async (params = {}) => {
+        const response = await api.get('/productos', { params });
         return response.data;
     },
     create: async (data) => {
@@ -172,6 +172,34 @@ export const UserService = {
     },
     async delete(id) {
         const response = await api.delete(`/users/${id}`);
+        return response.data;
+    }
+};
+export const TorneoService = {
+    getAll: async () => {
+        const response = await api.get('/torneos');
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await api.post('/torneos', data);
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await api.get(`/torneos/${id}`);
+        return response.data;
+    },
+    inscribir: async (id, jugadorId) => {
+        const response = await api.post(`/torneos/${id}/inscripciones`, { jugador_id: jugadorId });
+        return response.data;
+    },
+    registrarPago: async (id, inscripcionId, data) => {
+        const response = await api.post(`/torneos/${id}/inscripciones/${inscripcionId}/pagos`, data);
+    }
+};
+
+export const CategoriaService = {
+    getAll: async () => {
+        const response = await api.get('/categorias');
         return response.data;
     }
 };

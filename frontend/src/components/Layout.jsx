@@ -21,6 +21,7 @@ const Layout = ({ children }) => {
     // { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
     { name: 'Reservas Padel', path: '/reservas/padel', icon: '🎾' },
     { name: 'Reservas Futbol', path: '/reservas/futbol', icon: '🥅' },
+    { name: 'Torneos', path: '/torneos', icon: '🏆' },
     { name: 'Jugadores', path: '/jugadores', icon: '👥' },
     { name: 'Configuración', path: '/configuracion', icon: '⚙️', adminOnly: true },
   ];

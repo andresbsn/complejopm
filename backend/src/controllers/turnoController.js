@@ -67,6 +67,20 @@ const TurnoController = {
             console.error(error);
             res.status(500).json({ error: 'Error al actualizar estado' });
         }
+    },
+
+    async deleteFijo(req, res) {
+        try {
+            const { id } = req.params;
+            const deleted = await TurnoModel.deleteFijo(id);
+            if (!deleted) {
+                return res.status(404).json({ error: 'Turno fijo no encontrado' });
+            }
+            res.json({ message: 'Turno fijo eliminado correctamente', turno: deleted });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Error al eliminar turno fijo' });
+        }
     }
 };
 

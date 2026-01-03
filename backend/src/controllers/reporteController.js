@@ -141,6 +141,18 @@ const reporteController = {
                     FROM pagos p
                     JOIN turnos t ON p.turno_id = t.id
                     JOIN canchas c ON t.cancha_id = c.id
+                    UNION ALL
+                    SELECT
+                        i.id,
+                        i.fecha_pago as fecha,
+                        'INSCRIPCION' as tipo,
+                        'Inscripción Torneo: ' || t.descripcion || ' - ' || j.nombre as descripcion,
+                        i.metodo_pago as metodo,
+                        i.monto_abonado as monto
+                    FROM inscripciones i
+                    JOIN torneos t ON i.torneo_id = t.id
+                    JOIN jugadores j ON i.jugador_id = j.id
+                    WHERE i.pagado = TRUE
                 ) as combined
                 WHERE 1=1
             `;
