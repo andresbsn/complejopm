@@ -3,12 +3,26 @@ const pool = require('../config/db');
 const JugadorModel = {
     async create(data) {
         const { nombre, telefono, email, categoria_id } = data;
+        const catId = categoria_id === '' ? null : categoria_id;
         const query = `
             INSERT INTO jugadores (nombre, telefono, email, categoria_id)
             VALUES ($1, $2, $3, $4)
             RETURNING *
         `;
-        const result = await pool.query(query, [nombre, telefono, email, categoria_id]);
+        const result = await pool.query(query, [nombre, telefono, email, catId]);
+        return result.rows[0];
+    },
+
+    async update(id, data) {
+        const { nombre, telefono, email, categoria_id } = data;
+        const catId = categoria_id === '' ? null : categoria_id;
+        const query = `
+            UPDATE jugadores 
+            SET nombre = $1, telefono = $2, email = $3, categoria_id = $4
+            WHERE id = $5
+            RETURNING *
+        `;
+        const result = await pool.query(query, [nombre, telefono, email, catId, id]);
         return result.rows[0];
     },
 

@@ -11,6 +11,8 @@ const JugadoresPage = () => {
     const [newJugador, setNewJugador] = useState({ nombre: '', telefono: '', email: '', categoria_id: '' });
     const [creating, setCreating] = useState(false);
     const [selectedJugador, setSelectedJugador] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentJugadorId, setCurrentJugadorId] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -63,15 +65,40 @@ const JugadoresPage = () => {
         e.preventDefault();
         setCreating(true);
         try {
-            await JugadorService.create(newJugador);
+            if (isEditing) {
+                await JugadorService.update(currentJugadorId, newJugador);
+            } else {
+                await JugadorService.create(newJugador);
+            }
             setIsModalOpen(false);
             setNewJugador({ nombre: '', telefono: '', email: '', categoria_id: '' });
+            setIsEditing(false);
+            setCurrentJugadorId(null);
             fetchJugadores(searchTerm);
         } catch (error) {
-            alert('Error al crear jugador');
+            alert(isEditing ? 'Error al actualizar jugador' : 'Error al crear jugador');
         } finally {
             setCreating(false);
         }
+    };
+
+    const handleEdit = (jugador) => {
+        setNewJugador({
+            nombre: jugador.nombre,
+            telefono: jugador.telefono || '',
+            email: jugador.email || '',
+            categoria_id: jugador.categoria_id || ''
+        });
+        setCurrentJugadorId(jugador.id);
+        setIsEditing(true);
+        setIsModalOpen(true);
+    };
+
+    const openNewJugadorModal = () => {
+        setNewJugador({ nombre: '', telefono: '', email: '', categoria_id: '' });
+        setIsEditing(false);
+        setCurrentJugadorId(null);
+        setIsModalOpen(true);
     };
 
     return (
@@ -86,7 +113,7 @@ const JugadoresPage = () => {
                 <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
                     <button
                         type="button"
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={openNewJugadorModal}
                         className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
                     >
                         Agregar Jugador
@@ -144,6 +171,12 @@ const JugadoresPage = () => {
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <button 
+                                                        onClick={() => handleEdit(jugador)}
+                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button 
                                                         onClick={() => setSelectedJugador(jugador)}
                                                         className="text-indigo-600 hover:text-indigo-900"
                                                     >
@@ -170,7 +203,9 @@ const JugadoresPage = () => {
                         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <form onSubmit={handleSubmit}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Nuevo Jugador</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                        {isEditing ? 'Editar Jugador' : 'Nuevo Jugador'}
+                                    </h3>
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Nombre</label>

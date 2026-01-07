@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -105,6 +105,10 @@ export const JugadorService = {
     create: async (data) => {
         const response = await api.post('/jugadores', data);
         return response.data;
+    },
+    update: async (id, data) => {
+        const response = await api.put(`/jugadores/${id}`, data);
+        return response.data;
     }
 };
 
@@ -157,6 +161,17 @@ export const ReporteService = {
         if (filters.metodoPago) params.append('metodoPago', filters.metodoPago);
 
         const response = await api.get(`/reportes/ventas?${params.toString()}`);
+        return response.data;
+    },
+    async getJugadoresPorCategoria(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.categoria_id) params.append('categoria_id', filters.categoria_id);
+        if (filters.search) params.append('search', filters.search);
+        const response = await api.get(`/reportes/jugadores-categoria?${params.toString()}`);
+        return response.data;
+    },
+    async getDeudores() {
+        const response = await api.get('/reportes/deudores');
         return response.data;
     }
 };
