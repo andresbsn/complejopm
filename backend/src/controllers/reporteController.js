@@ -39,12 +39,12 @@ const reporteController = {
             let finalParams = [];
 
             if (fechaDesde) {
-                finalQuery += ` AND fecha::date >= $${paramCounter}`;
+                finalQuery += ` AND (fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= $${paramCounter}`;
                 finalParams.push(fechaDesde);
                 paramCounter++;
             }
             if (fechaHasta) {
-                finalQuery += ` AND fecha::date <= $${paramCounter}`;
+                finalQuery += ` AND (fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= $${paramCounter}`;
                 finalParams.push(fechaHasta);
                 paramCounter++;
             }

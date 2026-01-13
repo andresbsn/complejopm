@@ -7,16 +7,20 @@ const VentaModel = {
         try {
             await client.query('BEGIN');
 
+            // 0. Obtener caja abierta
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
+            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
+
             const { items, total, metodo_pago, jugador_id } = ventaData;
 
             // 1. Insertar la venta
             // Nota: Si método de pago es cuenta_corriente, registramos la venta igual.
             const ventaQuery = `
-                INSERT INTO ventas_cantina (total, metodo_pago)
-                VALUES ($1, $2)
+                INSERT INTO ventas_cantina (total, metodo_pago, caja_id)
+                VALUES ($1, $2, $3)
                 RETURNING *
             `;
-            const ventaResult = await client.query(ventaQuery, [total, metodo_pago]);
+            const ventaResult = await client.query(ventaQuery, [total, metodo_pago, cajaId]);
             const venta = ventaResult.rows[0];
 
             // 1.5 Si es cuenta corriente, registrar movimiento en cuenta del jugador
@@ -86,14 +90,12 @@ const VentaModel = {
         const conditions = [];
 
         if (fechaDesde) {
-            conditions.push(`fecha >= $${values.length + 1}`);
+            conditions.push(`(fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= $${values.length + 1}`);
             values.push(fechaDesde);
         }
 
         if (fechaHasta) {
-            // Asumimos que fechaHasta incluye hasta el final del día si viene solo la fecha
-            // O el frontend se encarga. Por ahora comparamos directo.
-            conditions.push(`fecha <= $${values.length + 1}`);
+            conditions.push(`(fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= $${values.length + 1}`);
             values.push(fechaHasta);
         }
 

@@ -50,7 +50,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder = "Seleccionar
             </div>
 
             {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                <div className="absolute z-50 w-full mt-1 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
                     <div className="p-2 sticky top-0 bg-white border-b border-gray-100">
                         <input
                             type="text"

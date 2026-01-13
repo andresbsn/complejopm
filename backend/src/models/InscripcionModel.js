@@ -28,7 +28,7 @@ const InscripcionModel = {
     async registrarPago(id, monto, metodo) {
         const query = `
             UPDATE inscripciones
-            SET pagado = TRUE, monto_abonado = $2, fecha_pago = CURRENT_TIMESTAMP, metodo_pago = $3
+            SET pagado = TRUE, monto_abonado = $2, fecha_pago = CURRENT_TIMESTAMP, metodo_pago = $3, caja_id = (SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1)
             WHERE id = $1
             RETURNING *
         `;

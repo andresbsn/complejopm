@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -215,6 +215,75 @@ export const TorneoService = {
 export const CategoriaService = {
     getAll: async () => {
         const response = await api.get('/categorias');
+        return response.data;
+    }
+};
+
+export const CajaService = {
+    abrir: async (saldo_inicial) => {
+        const response = await api.post('/cajas/abrir', { saldo_inicial });
+        return response.data;
+    },
+    cerrar: async (id, saldo_final) => {
+        const response = await api.put(`/cajas/${id}/cerrar`, { saldo_final });
+        return response.data;
+    },
+    getEstado: async () => {
+        const response = await api.get('/cajas/estado');
+        return response.data;
+    },
+    getMovimientos: async (id) => {
+        const response = await api.get(`/cajas/${id}/movimientos`);
+        return response.data;
+    },
+    getHistorial: async () => {
+        const response = await api.get('/cajas/historial');
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await api.get(`/cajas/${id}`);
+        return response.data;
+    }
+};
+
+export const CompraService = {
+    getAll: async () => {
+        const response = await api.get('/compras');
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await api.get(`/compras/${id}`);
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await api.post('/compras', data);
+        return response.data;
+    },
+    update: async (id, data) => {
+        const response = await api.put(`/compras/${id}`, data);
+        return response.data;
+    },
+    confirmar: async (id) => {
+        const response = await api.post(`/compras/${id}/confirmar`);
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await api.delete(`/compras/${id}`);
+        return response.data;
+    }
+};
+
+export const GastoService = {
+    getAll: async () => {
+        const response = await api.get('/gastos');
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await api.post('/gastos', data);
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await api.delete(`/gastos/${id}`);
         return response.data;
     }
 };

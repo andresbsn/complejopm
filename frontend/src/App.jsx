@@ -19,6 +19,8 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import TorneosPage from './components/TorneosPage';
 import TorneoDetailsPage from './components/TorneoDetailsPage';
+import CajaPage from './components/CajaPage';
+import GastosPage from './components/GastosPage';
 
 function App() {
   return (
@@ -75,11 +77,9 @@ function App() {
 
           <Route path="/reportes" element={
             <PrivateRoute>
-              <AdminRoute>
-                <Layout>
-                  <ReportesPage />
-                </Layout>
-              </AdminRoute>
+              <Layout>
+                <ReportesPage />
+              </Layout>
             </PrivateRoute>
           } />
           
@@ -136,6 +136,22 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <JugadoresPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+
+          <Route path="/caja" element={
+            <PrivateRoute>
+              <Layout>
+                <CajaPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+
+          <Route path="/gastos" element={
+            <PrivateRoute>
+              <Layout>
+                <GastosPage />
               </Layout>
             </PrivateRoute>
           } />

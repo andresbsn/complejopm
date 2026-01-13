@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ReporteService, CategoriaService } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useAuth } from '../context/AuthContext';
 
 const ReportesPage = () => {
-    const [activeTab, setActiveTab] = useState('ventas');
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
+
+    const [activeTab, setActiveTab] = useState(isAdmin ? 'ventas' : 'deudores');
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState([]);
     
@@ -23,10 +27,17 @@ const ReportesPage = () => {
     const [stats, setStats] = useState({ total: 0, byMethod: {} });
 
     useEffect(() => {
-        fetchCategorias();
-    }, []);
+        if (isAdmin) {
+            fetchCategorias();
+        }
+    }, [isAdmin]);
 
     useEffect(() => {
+        // Prevent non-admins from fetching unauthorized reports
+        if (!isAdmin && (activeTab === 'ventas' || activeTab === 'jugadores')) {
+            setActiveTab('deudores');
+            return;
+        }
         fetchReport();
     }, [activeTab]);
 
@@ -44,11 +55,11 @@ const ReportesPage = () => {
         setReportData([]);
         try {
             let data = [];
-            if (activeTab === 'ventas') {
+            if (activeTab === 'ventas' && isAdmin) {
                 const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago };
                 data = await ReporteService.getVentas(filters);
                 calculateStats(data);
-            } else if (activeTab === 'jugadores') {
+            } else if (activeTab === 'jugadores' && isAdmin) {
                 const filters = filtersOverride || { search: jugadorSearch, categoria_id: jugadorCategoria };
                 data = await ReporteService.getJugadoresPorCategoria(filters);
                 setStats({ total: data.length, byMethod: {} }); // Count total players
@@ -152,12 +163,14 @@ const ReportesPage = () => {
         doc.save(`${activeTab}_report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
+    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores'] : ['deudores'];
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Reportes del Sistema</h2>
                 <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
-                    {['ventas', 'jugadores', 'deudores'].map((tab) => (
+                    {tabs.map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}

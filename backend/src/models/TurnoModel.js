@@ -78,7 +78,7 @@ const TurnoModel = {
 
         let queryFijos = `
             SELECT rf.*, c.nombre as cancha_nombre, c.tipo as cancha_tipo,
-            COALESCE((SELECT SUM(monto) FROM pagos WHERE turno_id = rf.id), 0) as monto_pagado
+            0 as monto_pagado
             FROM reservas_fijas rf
             JOIN canchas c ON rf.cancha_id = c.id
             WHERE rf.dia_semana = $1
@@ -99,7 +99,7 @@ const TurnoModel = {
             // Verificar si ya existe un turno real que solape (incluyendo cancelados)
             const existeReal = turnosReales.some(real =>
                 real.cancha_id === fijo.cancha_id &&
-                real.hora_inicio === fijo.hora_inicio
+                real.hora_inicio.slice(0, 5) === fijo.hora_inicio.slice(0, 5)
             );
 
             // Solo agregar el turno fijo si NO existe ningún turno real (ni siquiera cancelado)

@@ -17,12 +17,14 @@ const Layout = ({ children }) => {
     { name: 'Productos', path: '/productos', icon: '📦', adminOnly: true },
     { name: 'Proveedores', path: '/proveedores', icon: '🏢', adminOnly: true },
     { name: 'Ventas', path: '/ventas', icon: '💰' },
-    { name: 'Reportes', path: '/reportes', icon: '📈', adminOnly: true },
+    { name: 'Reportes', path: '/reportes', icon: '📈' },
     // { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
     { name: 'Reservas Padel', path: '/reservas/padel', icon: '🎾' },
     { name: 'Reservas Futbol', path: '/reservas/futbol', icon: '🥅' },
     { name: 'Torneos', path: '/torneos', icon: '🏆' },
     { name: 'Jugadores', path: '/jugadores', icon: '👥' },
+    { name: 'Caja', path: '/caja', icon: '💸' },
+    { name: 'Gastos', path: '/gastos', icon: '💸' },
     { name: 'Configuración', path: '/configuracion', icon: '⚙️', adminOnly: true },
   ];
 

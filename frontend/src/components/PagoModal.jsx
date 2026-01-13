@@ -12,17 +12,29 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // Extract the real ID from the virtual ID for fixed turnos (format: fijo_123)
-            const turnoId = turno.id.toString().startsWith('fijo_') 
-                ? turno.id.toString().replace('fijo_', '') 
-                : turno.id;
+            let turnoId = turno.id;
+
+            // Si es un turno fijo, primero lo materializamos como un turno real para esta fecha
+            if (turno.id.toString().startsWith('fijo_') || turno.es_fijo) {
+                const nuevoTurno = await TurnoService.create({
+                    cancha_id: turno.cancha_id,
+                    fecha: turno.fecha,
+                    hora_inicio: turno.hora_inicio,
+                    hora_fin: turno.hora_fin,
+                    cliente_nombre: turno.cliente_nombre,
+                    cliente_telefono: turno.cliente_telefono,
+                    monto_total: turno.monto_total,
+                    es_fijo: false // Importante: crearlo como turno normal
+                });
+                turnoId = nuevoTurno.id;
+            }
             
             await api.post(`/turnos/${turnoId}/pagos`, { monto, metodo });
             onPagoSuccess();
             onClose();
         } catch (error) {
             console.error('Error al registrar pago:', error);
-            alert('Error al registrar el pago');
+            alert('Error al registrar el pago: ' + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }

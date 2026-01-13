@@ -21,12 +21,20 @@ const cuentaController = {
                 return res.status(400).json({ error: 'Faltan datos requeridos' });
             }
 
+            let caja_id = null;
+            if (tipo === 'HABER') {
+                const CajaModel = require('../models/CajaModel');
+                const caja = await CajaModel.getAbierta();
+                if (caja) caja_id = caja.id;
+            }
+
             const nuevoMovimiento = await CuentaModel.addMovimiento({
                 jugador_id,
                 tipo,
                 monto,
                 descripcion,
-                referencia_id
+                referencia_id,
+                caja_id
             });
 
             const nuevoSaldo = await CuentaModel.getSaldo(jugador_id);

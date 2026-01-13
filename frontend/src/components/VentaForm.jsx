@@ -121,7 +121,7 @@ const VentaForm = ({ onVentaCreated }) => {
     };
 
     const filteredProductos = productos.filter(p => 
-        p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+        p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) && p.stock > 0
     );
 
     return (

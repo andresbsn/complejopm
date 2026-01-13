@@ -6,15 +6,19 @@ const PagoModel = {
         try {
             await client.query('BEGIN');
 
+            // 0. Obtener caja abierta
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
+            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
+
             const { turno_id, monto, metodo } = pagoData;
 
             // 1. Registrar el pago
             const pagoQuery = `
-                INSERT INTO pagos (turno_id, monto, metodo)
-                VALUES ($1, $2, $3)
+                INSERT INTO pagos (turno_id, monto, metodo, caja_id)
+                VALUES ($1, $2, $3, $4)
                 RETURNING *
             `;
-            const pagoResult = await client.query(pagoQuery, [turno_id, monto, metodo]);
+            const pagoResult = await client.query(pagoQuery, [turno_id, monto, metodo, cajaId]);
             const pago = pagoResult.rows[0];
 
             // 2. Actualizar estado del turno si es necesario

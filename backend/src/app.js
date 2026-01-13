@@ -15,6 +15,9 @@ const categoriaRoutes = require('./routes/categoriaRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const reporteRoutes = require('./routes/reporteRoutes');
 const userRoutes = require('./routes/userRoutes');
+const cajaRoutes = require('./routes/cajaRoutes');
+const compraRoutes = require('./routes/compraRoutes');
+const gastoRoutes = require('./routes/gastoRoutes');
 
 const app = express();
 
@@ -38,6 +41,10 @@ app.use('/api/reportes', authMiddleware, reporteRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/torneos', authMiddleware, torneoRoutes);
 app.use('/api/categorias', authMiddleware, categoriaRoutes);
+app.use('/api/cajas', authMiddleware, cajaRoutes);
+app.use('/api/compras', authMiddleware, compraRoutes);
+app.use('/api/gastos', authMiddleware, gastoRoutes);
+
 
 // Ruta de prueba
 app.get('/', (req, res) => {

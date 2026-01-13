@@ -14,13 +14,13 @@ const CuentaModel = {
 
     // Agregar un movimiento (Deuda o Pago)
     async addMovimiento(movimiento) {
-        const { jugador_id, tipo, monto, descripcion, referencia_id } = movimiento;
+        const { jugador_id, tipo, monto, descripcion, referencia_id, caja_id } = movimiento;
         const query = `
-            INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `;
-        const result = await pool.query(query, [jugador_id, tipo, monto, descripcion, referencia_id]);
+        const result = await pool.query(query, [jugador_id, tipo, monto, descripcion, referencia_id, caja_id]);
         return result.rows[0];
     },
 
