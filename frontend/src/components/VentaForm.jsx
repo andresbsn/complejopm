@@ -125,15 +125,15 @@ const VentaForm = ({ onVentaCreated }) => {
     );
 
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6 h-auto lg:h-[calc(100vh-100px)]">
             {/* Left Column: Product Catalog */}
-            <div className="w-full md:w-2/3 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gray-50">
+            <div className="w-full lg:w-2/3 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-[400px] md:h-[500px] lg:h-auto">
+                <div className="p-3 md:p-4 border-b border-gray-100 bg-gray-50">
                     <div className="relative">
                         <input
                             type="text"
                             placeholder="Buscar productos..."
-                            className="w-full pl-10 pr-4 py-2 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            className="w-full pl-10 pr-4 py-2 text-sm md:text-base rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -141,30 +141,30 @@ const VentaForm = ({ onVentaCreated }) => {
                     </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex-1 overflow-y-auto p-3 md:p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
                         {filteredProductos.map(producto => (
                             <button
                                 key={producto.id}
                                 onClick={() => agregarAlCarrito(producto)}
                                 disabled={producto.stock <= 0}
-                                className={`flex flex-col items-start p-4 rounded-lg border transition-all duration-200 text-left ${
+                                className={`flex flex-col items-start p-2 md:p-4 rounded-lg border transition-all duration-200 text-left ${
                                     producto.stock > 0 
                                         ? 'border-gray-200 hover:border-indigo-500 hover:shadow-md bg-white' 
                                         : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
                                 }`}
                             >
-                                <div className="w-full flex justify-between items-start mb-2">
-                                    <span className="font-semibold text-gray-800 line-clamp-1">{producto.nombre}</span>
-                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                <div className="w-full flex justify-between items-start mb-1 md:mb-2">
+                                    <span className="font-semibold text-gray-800 line-clamp-2 text-xs md:text-sm">{producto.nombre}</span>
+                                    <span className={`text-xs font-medium px-1.5 md:px-2 py-0.5 rounded-full flex-shrink-0 ml-1 ${
                                         producto.stock > 10 ? 'bg-green-100 text-green-800' : 
                                         producto.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                                     }`}>
                                         {producto.stock}
                                     </span>
                                 </div>
-                                <div className="text-indigo-600 font-bold text-lg">${producto.precio}</div>
-                                <div className="text-xs text-gray-500 mt-1 capitalize">{producto.categoria}</div>
+                                <div className="text-indigo-600 font-bold text-base md:text-lg">${producto.precio}</div>
+                                <div className="text-xs text-gray-500 mt-0.5 md:mt-1 capitalize truncate w-full">{producto.categoria}</div>
                             </button>
                         ))}
                     </div>
@@ -172,13 +172,13 @@ const VentaForm = ({ onVentaCreated }) => {
             </div>
 
             {/* Right Column: Cart/Ticket */}
-            <div className="w-full md:w-1/3 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-gray-800">Ticket de Venta</h2>
-                    <span className="text-sm text-gray-500">{carrito.length} items</span>
+            <div className="w-full lg:w-1/3 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-3 md:p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <h2 className="text-base md:text-lg font-semibold text-gray-800">Ticket de Venta</h2>
+                    <span className="text-xs md:text-sm text-gray-500">{carrito.length} items</span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3">
                     {carrito.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400">
                             <span className="text-4xl mb-2">🛒</span>

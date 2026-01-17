@@ -96,7 +96,34 @@ const VentaList = ({ refreshTrigger }) => {
             )}
 
             <div className="overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                    {ventas.map(venta => (
+                        <div key={venta.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <span className="text-sm font-medium text-gray-500">#{venta.id}</span>
+                                    <p className="text-sm text-gray-900">{new Date(venta.fecha).toLocaleString()}</p>
+                                </div>
+                                <span className="text-lg font-bold text-gray-900">${venta.total}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-3">
+                                <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full capitalize">
+                                    {venta.metodo_pago || '-'}
+                                </span>
+                                <button 
+                                    onClick={() => verDetalles(venta.id)}
+                                    className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                                >
+                                    Ver Detalles
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>

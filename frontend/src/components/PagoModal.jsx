@@ -108,8 +108,8 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-            <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-4">
+            <div className="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
                 <div className="mt-3">
                     <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Registrar Pago</h3>
                     <p className="text-sm text-gray-500 mb-2">
@@ -153,31 +153,31 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 <option value="qr">QR</option>
                             </select>
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                disabled={loading}
-                            >
-                                Cancelar Turno
-                            </button>
+                        <div className="flex flex-col gap-2">
                             <div className="flex gap-2">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
                                 >
                                     Cerrar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    className="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
                                     disabled={loading}
                                 >
                                     {loading ? 'Procesando...' : 'Pagar'}
                                 </button>
                             </div>
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
+                                disabled={loading}
+                            >
+                                Cancelar Turno
+                            </button>
                         </div>
                     </form>
                 </div>

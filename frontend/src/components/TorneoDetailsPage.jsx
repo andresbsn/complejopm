@@ -19,6 +19,7 @@ const TorneoDetailsPage = () => {
     const [selectedInscripcion, setSelectedInscripcion] = useState(null);
     const [paymentData, setPaymentData] = useState({ monto: '', metodo: 'efectivo' });
     const [paying, setPaying] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchTorneoDetails();
@@ -96,6 +97,10 @@ const TorneoDetailsPage = () => {
 
     const jugadoresOptions = jugadores.map(j => ({ value: j.id, label: `${j.nombre} (${j.categoria || 'S/C'})` }));
 
+    const filteredInscripciones = torneo.inscripciones?.filter(inscripcion => 
+        inscripcion.jugador_nombre.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-6">
@@ -124,7 +129,18 @@ const TorneoDetailsPage = () => {
             </div>
 
             <div className="mt-8">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Jugadores Inscriptos</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-medium text-gray-900">Jugadores Inscriptos</h2>
+                    <div className="w-full max-w-xs">
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre..."
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
                 <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
@@ -139,8 +155,8 @@ const TorneoDetailsPage = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {torneo.inscripciones && torneo.inscripciones.length > 0 ? (
-                                torneo.inscripciones.map((inscripcion) => (
+                            {filteredInscripciones.length > 0 ? (
+                                filteredInscripciones.map((inscripcion) => (
                                     <tr key={inscripcion.id}>
                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                                             {inscripcion.jugador_nombre}

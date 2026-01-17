@@ -134,7 +134,50 @@ const JugadoresPage = () => {
             <div className="mt-8 flex flex-col">
                 <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                        
+                        {/* Mobile Card View */}
+                        <div className="md:hidden space-y-4 px-4">
+                            {loading ? (
+                                <div className="text-center py-4 text-gray-500">Cargando...</div>
+                            ) : jugadores.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron jugadores.</div>
+                            ) : (
+                                jugadores.map((jugador) => (
+                                    <div key={jugador.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-lg font-medium text-gray-900">{jugador.nombre}</h3>
+                                            <span className={`text-sm font-semibold ${
+                                                parseFloat(jugador.saldo) > 0 ? 'text-red-600' : 'text-green-600'
+                                            }`}>
+                                                ${parseFloat(jugador.saldo || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-500 space-y-1 mb-3">
+                                            <p>📞 {jugador.telefono || '-'}</p>
+                                            <p>✉️ {jugador.email || '-'}</p>
+                                            <p>🏷️ {jugador.categoria_descripcion || '-'}</p>
+                                        </div>
+                                        <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                                            <button 
+                                                onClick={() => handleEdit(jugador)}
+                                                className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button 
+                                                onClick={() => setSelectedJugador(jugador)}
+                                                className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                                            >
+                                                Ver Cuenta
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                             <table className="min-w-full divide-y divide-gray-300">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -151,11 +194,11 @@ const JugadoresPage = () => {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="3" className="py-4 text-center text-sm text-gray-500">Cargando...</td>
+                                            <td colSpan="6" className="py-4 text-center text-sm text-gray-500">Cargando...</td>
                                         </tr>
                                     ) : jugadores.length === 0 ? (
                                         <tr>
-                                            <td colSpan="3" className="py-4 text-center text-sm text-gray-500">No se encontraron jugadores.</td>
+                                            <td colSpan="6" className="py-4 text-center text-sm text-gray-500">No se encontraron jugadores.</td>
                                         </tr>
                                     ) : (
                                         jugadores.map((jugador) => (

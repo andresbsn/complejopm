@@ -63,10 +63,10 @@ const Dashboard = () => {
     const modules = allModules.filter(module => !module.adminOnly || isAdmin);
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Panel de Control</h1>
+        <div className="container mx-auto px-4 py-6 md:py-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 md:mb-8">Panel de Control</h1>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {modules.map((module) => (
                     <Link 
                         key={module.name} 
@@ -74,17 +74,17 @@ const Dashboard = () => {
                         className="block group"
                     >
                         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 h-full">
-                            <div className="p-6 flex items-center space-x-4">
-                                <div className={`p-4 rounded-lg text-white text-2xl ${module.color} bg-opacity-90 group-hover:bg-opacity-100 transition-colors`}>
+                            <div className="p-4 md:p-6 flex items-center space-x-3 md:space-x-4">
+                                <div className={`p-3 md:p-4 rounded-lg text-white text-xl md:text-2xl ${module.color} bg-opacity-90 group-hover:bg-opacity-100 transition-colors flex-shrink-0`}>
                                     {module.icon}
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-800">{module.name}</h2>
-                                    <p className="text-gray-500 text-sm mt-1">{module.description}</p>
+                                <div className="flex-1 min-w-0">
+                                    <h2 className="text-base md:text-xl font-bold text-gray-800 truncate">{module.name}</h2>
+                                    <p className="text-gray-500 text-xs md:text-sm mt-1 line-clamp-2">{module.description}</p>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
-                                <span className="text-indigo-600 font-medium text-sm group-hover:underline">Acceder</span>
+                            <div className="bg-gray-50 px-4 md:px-6 py-2 md:py-3 border-t border-gray-100 flex justify-between items-center">
+                                <span className="text-indigo-600 font-medium text-xs md:text-sm group-hover:underline">Acceder</span>
                                 <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                             </div>
                         </div>
