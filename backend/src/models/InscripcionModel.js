@@ -28,11 +28,18 @@ const InscripcionModel = {
     async registrarPago(id, monto, metodo) {
         const query = `
             UPDATE inscripciones
-            SET pagado = TRUE, monto_abonado = $2, fecha_pago = CURRENT_TIMESTAMP, metodo_pago = $3, caja_id = (SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1)
+            SET pagado = TRUE, monto_abonado = $2, fecha_pago = CURRENT_TIMESTAMP, metodo_pago = $3, 
+                caja_id = CASE WHEN $4 = 'cuenta_corriente' THEN NULL ELSE (SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1) END
             WHERE id = $1
             RETURNING *
         `;
-        const result = await pool.query(query, [id, monto, metodo]);
+        const result = await pool.query(query, [id, monto, metodo, metodo]);
+        return result.rows[0];
+    },
+
+    async cambiarEstado(id, estado) {
+        const query = 'UPDATE inscripciones SET estado = $2 WHERE id = $1 RETURNING *';
+        const result = await pool.query(query, [id, estado]);
         return result.rows[0];
     }
 };

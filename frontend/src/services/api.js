@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -209,6 +209,11 @@ export const TorneoService = {
     },
     registrarPago: async (id, inscripcionId, data) => {
         const response = await api.post(`/torneos/${id}/inscripciones/${inscripcionId}/pagos`, data);
+        return response.data;
+    },
+    darDeBaja: async (id, inscripcionId) => {
+        const response = await api.put(`/torneos/${id}/inscripciones/${inscripcionId}/baja`);
+        return response.data;
     }
 };
 

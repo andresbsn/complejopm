@@ -73,6 +73,10 @@ const TorneosPage = () => {
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Descripción</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha Inicio</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Inscriptos</th>
+                                        {/* <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Abandonaron</th> */}
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pagados</th>
+                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Faltan Pagar</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Costo Inscripción</th>
                                         <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                             <span className="sr-only">Acciones</span>
@@ -82,11 +86,11 @@ const TorneosPage = () => {
                                 <tbody className="divide-y divide-gray-200 bg-white">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="4" className="py-4 text-center text-sm text-gray-500">Cargando...</td>
+                                            <td colSpan="8" className="py-4 text-center text-sm text-gray-500">Cargando...</td>
                                         </tr>
                                     ) : torneos.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="py-4 text-center text-sm text-gray-500">No hay torneos registrados.</td>
+                                            <td colSpan="8" className="py-4 text-center text-sm text-gray-500">No hay torneos registrados.</td>
                                         </tr>
                                     ) : (
                                         torneos.map((torneo) => (
@@ -95,6 +99,10 @@ const TorneosPage = () => {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {new Date(torneo.fecha_inicio).toLocaleDateString()}
                                                 </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{torneo.cantidad_inscriptos || 0}</td>
+                                                {/* <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{torneo.cantidad_abandonos || 0}</td> */}
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-green-600 font-medium">{torneo.cantidad_pagados || 0}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-red-600 font-medium">{torneo.cantidad_impagos || 0}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${torneo.costo_inscripcion}</td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <Link 

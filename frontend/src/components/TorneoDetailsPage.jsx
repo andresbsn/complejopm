@@ -93,6 +93,16 @@ const TorneoDetailsPage = () => {
         }
     };
 
+    const handleBaja = async (inscripcion) => {
+        if (!window.confirm('¿Está seguro de dar de baja a este jugador?')) return;
+        try {
+            await TorneoService.darDeBaja(id, inscripcion.id);
+            fetchTorneoDetails();
+        } catch (error) {
+            alert('Error al dar de baja');
+        }
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-500">Cargando...</div>;
     if (!torneo) return <div className="p-8 text-center text-red-500">Torneo no encontrado</div>;
 
@@ -199,13 +209,24 @@ const TorneoDetailsPage = () => {
                                             {inscripcion.monto_abonado > 0 ? `$${inscripcion.monto_abonado}` : '-'}
                                         </td>
                                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                            {!inscripcion.pagado && (
+                                            {!inscripcion.pagado && (!inscripcion.estado || inscripcion.estado === 'inscripto') && (
                                                 <button
                                                     onClick={() => handleOpenPayment(inscripcion)}
                                                     className="text-indigo-600 hover:text-indigo-900 font-semibold"
                                                 >
                                                     Cobrar
                                                 </button>
+                                            )}
+                                            {(!inscripcion.estado || inscripcion.estado === 'inscripto') && (
+                                                <button
+                                                    onClick={() => handleBaja(inscripcion)}
+                                                    className="text-red-600 hover:text-red-900 font-semibold ml-4"
+                                                >
+                                                    Baja
+                                                </button>
+                                            )}
+                                            {inscripcion.estado === 'baja' && (
+                                                <span className="text-red-500 font-medium">Baja</span>
                                             )}
                                         </td>
                                     </tr>
@@ -296,6 +317,7 @@ const TorneoDetailsPage = () => {
                                                 <option value="transferencia">Transferencia</option>
                                                 <option value="debito">Débito</option>
                                                 <option value="credito">Crédito</option>
+                                                <option value="cuenta_corriente">Cuenta Corriente</option>
                                             </select>
                                         </div>
                                     </div>

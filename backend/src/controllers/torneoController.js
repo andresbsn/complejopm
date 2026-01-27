@@ -62,11 +62,37 @@ const TorneoController = {
             const { id, inscripcionId } = req.params;
             const { monto, metodo } = req.body;
 
-            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, monto, metodo);
+            let inscripcion;
+            if (metodo === 'cuenta_corriente') {
+                inscripcion = await InscripcionModel.registrarPago(inscripcionId, monto, metodo);
+
+                const CuentaModel = require('../models/CuentaModel');
+                await CuentaModel.addMovimiento({
+                    jugador_id: inscripcion.jugador_id,
+                    tipo: 'DEBE',
+                    monto: monto,
+                    descripcion: `Inscripción Torneo: ${id}`,
+                    referencia_id: inscripcionId,
+                    caja_id: null
+                });
+            } else {
+                inscripcion = await InscripcionModel.registrarPago(inscripcionId, monto, metodo);
+            }
             res.json(inscripcion);
         } catch (error) {
             console.error('Error al registrar pago de inscripcion:', error);
             res.status(500).json({ error: 'Error al registrar pago' });
+        }
+    },
+
+    async darDeBaja(req, res) {
+        try {
+            const { inscripcionId } = req.params;
+            const inscripcion = await InscripcionModel.cambiarEstado(inscripcionId, 'baja');
+            res.json(inscripcion);
+        } catch (error) {
+            console.error('Error al dar de baja:', error);
+            res.status(500).json({ error: 'Error al dar de baja' });
         }
     }
 };
