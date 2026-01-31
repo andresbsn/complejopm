@@ -7,8 +7,14 @@ const ConfiguracionModel = {
     },
 
     async update(clave, valor) {
-        const query = 'UPDATE configuracion SET valor = $1 WHERE clave = $2 RETURNING *';
-        const result = await pool.query(query, [valor, clave]);
+        const query = `
+            INSERT INTO configuracion (clave, valor)
+            VALUES ($1, $2)
+            ON CONFLICT (clave) 
+            DO UPDATE SET valor = EXCLUDED.valor
+            RETURNING *
+        `;
+        const result = await pool.query(query, [clave, valor]); // Note: Reversed generic param order to match query
         return result.rows[0];
     },
 

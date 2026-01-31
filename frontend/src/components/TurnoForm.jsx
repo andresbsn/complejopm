@@ -31,16 +31,24 @@ const TurnoForm = ({ onTurnoCreated }) => {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
     
-    let newFormData = { ...formData, [name]: value };
+    let newFormData = { ...formData, [name]: fieldValue };
 
-    // Auto-fill price when court changes
-    if (name === 'cancha_id') {
-        const cancha = canchas.find(c => c.id === parseInt(value));
+    // Calculate price logic
+    const canchaId = name === 'cancha_id' ? value : formData.cancha_id;
+    const esFijo = name === 'es_fijo' ? checked : (formData.es_fijo || false);
+
+    if (canchaId && (name === 'cancha_id' || name === 'es_fijo')) {
+        const cancha = canchas.find(c => c.id === parseInt(canchaId));
         if (cancha) {
-            if (cancha.tipo === 'padel' && config.PRECIO_PADEL) {
-                newFormData.monto_total = config.PRECIO_PADEL;
+            if (cancha.tipo === 'padel') {
+                if (esFijo && config.PRECIO_PADEL_FIJO) {
+                    newFormData.monto_total = config.PRECIO_PADEL_FIJO;
+                } else if (config.PRECIO_PADEL) {
+                    newFormData.monto_total = config.PRECIO_PADEL;
+                }
             } else if (cancha.tipo === 'futbol' && config.PRECIO_FUTBOL) {
                 newFormData.monto_total = config.PRECIO_FUTBOL;
             }
@@ -122,7 +130,7 @@ const TurnoForm = ({ onTurnoCreated }) => {
           name="es_fijo" 
           id="es_fijo"
           checked={formData.es_fijo || false} 
-          onChange={(e) => setFormData({...formData, es_fijo: e.target.checked})} 
+          onChange={handleChange} 
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor="es_fijo" className="ml-2 block text-sm text-gray-900">

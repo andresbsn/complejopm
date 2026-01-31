@@ -15,9 +15,26 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
 
     useEffect(() => {
         // Pre-fill price based on config and type
-        const price = type === 'PADEL' ? config.PRECIO_PADEL : config.PRECIO_FUTBOL;
-        setFormData(prev => ({ ...prev, monto_total: price }));
-    }, [config, type]);
+        updatePrice(formData.es_fijo);
+    }, [config, type]); // removed formData.es_fijo dependency to avoid loop if I put it here, but I will make a separate handler
+
+    const updatePrice = (isFixed) => {
+        if (type === 'PADEL') {
+            if (isFixed && config.PRECIO_PADEL_FIJO) {
+                setFormData(prev => ({ ...prev, monto_total: config.PRECIO_PADEL_FIJO }));
+            } else {
+                setFormData(prev => ({ ...prev, monto_total: config.PRECIO_PADEL }));
+            }
+        } else {
+             setFormData(prev => ({ ...prev, monto_total: config.PRECIO_FUTBOL }));
+        }
+    };
+
+    const handleFixedChange = (e) => {
+        const isFixed = e.target.checked;
+        setFormData(prev => ({ ...prev, es_fijo: isFixed }));
+        updatePrice(isFixed);
+    };
 
     const handleNameChange = async (e) => {
         const value = e.target.value;
@@ -166,7 +183,7 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                                         type="checkbox"
                                         className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                         checked={formData.es_fijo}
-                                        onChange={e => setFormData({...formData, es_fijo: e.target.checked})}
+                                        onChange={handleFixedChange}
                                     />
                                     <label htmlFor="es_fijo" className="ml-2 block text-sm text-gray-900">
                                         Reserva Fija (Semanal)

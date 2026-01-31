@@ -8,6 +8,7 @@ const ConfiguracionPage = () => {
     // Config State
     const [config, setConfig] = useState({
         PRECIO_PADEL: '',
+        PRECIO_PADEL_FIJO: '',
         PRECIO_FUTBOL: '',
         DURACION_PADEL: '',
         DURACION_FUTBOL: '',
@@ -46,6 +47,7 @@ const ConfiguracionPage = () => {
         setLoading(true);
         try {
             await ConfiguracionService.update('PRECIO_PADEL', config.PRECIO_PADEL);
+            await ConfiguracionService.update('PRECIO_PADEL_FIJO', config.PRECIO_PADEL_FIJO);
             await ConfiguracionService.update('PRECIO_FUTBOL', config.PRECIO_FUTBOL);
             await ConfiguracionService.update('DURACION_PADEL', config.DURACION_PADEL);
             await ConfiguracionService.update('DURACION_FUTBOL', config.DURACION_FUTBOL);
@@ -126,6 +128,24 @@ const ConfiguracionPage = () => {
                                                     />
                                                 </div>
                                             </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Cancha de Padel (Turno Fijo)</label>
+                                                <div className="relative rounded-md shadow-sm">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <span className="text-gray-500 sm:text-sm">$</span>
+                                                    </div>
+                                                    <input
+                                                        type="number"
+                                                        name="PRECIO_PADEL_FIJO"
+                                                        value={config.PRECIO_PADEL_FIJO || ''}
+                                                        onChange={handleChange}
+                                                        className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Cancha de Fútbol</label>
                                                 <div className="relative rounded-md shadow-sm">
