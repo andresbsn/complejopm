@@ -39,7 +39,7 @@ const ReportesPage = () => {
 
     useEffect(() => {
         // Prevent non-admins from fetching unauthorized reports
-        if (!isAdmin && (activeTab === 'ventas' || activeTab === 'jugadores' || activeTab === 'caja')) {
+        if (!isAdmin && (activeTab === 'ventas' || activeTab === 'jugadores')) {
             setActiveTab('deudores');
             return;
         }
@@ -82,11 +82,17 @@ const ReportesPage = () => {
                 const totalDebt = data.reduce((acc, curr) => acc + parseFloat(curr.saldo || 0), 0);
                 setStats({ total: totalDebt, byMethod: {} });
                 setReportData(data);
-            } else if (activeTab === 'caja' && isAdmin) {
+            } else if (activeTab === 'caja') {
                 if (selectedCaja) {
                     const movs = await CajaService.getMovimientos(selectedCaja.id);
-                    setCajaMovimientos(movs);
-                    // Calculates net balance of movements just for display info if needed
+                    // Filter cash movements only for regular users
+                    const filteredMovs = isAdmin ? movs : movs.filter(m => 
+                        m.metodo_pago?.toLowerCase() === 'efectivo' || 
+                        m.tipo_movimiento === 'GASTO' || 
+                        m.tipo_movimiento === 'INGRESO_CUENTA'
+                    );
+                    setCajaMovimientos(filteredMovs);
+                    calculateStats(filteredMovs, selectedCaja);
                 } else {
                     const history = await CajaService.getHistorial();
                     setCajasHistory(history);
@@ -154,8 +160,13 @@ const ReportesPage = () => {
         setLoading(true);
         CajaService.getMovimientos(caja.id)
             .then(movs => {
-                setCajaMovimientos(movs);
-                calculateStats(movs, caja); // Pass caja explicitly to avoid stale state
+                const filteredMovs = isAdmin ? movs : movs.filter(m => 
+                    m.metodo_pago?.toLowerCase() === 'efectivo' || 
+                    m.tipo_movimiento === 'GASTO' || 
+                    m.tipo_movimiento === 'INGRESO_CUENTA'
+                );
+                setCajaMovimientos(filteredMovs);
+                calculateStats(filteredMovs, caja); // Pass caja explicitly to avoid stale state
             })
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
@@ -217,6 +228,7 @@ const ReportesPage = () => {
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
         } else if (activeTab === 'caja') {
              if (selectedCaja) {
+                doc.text(isAdmin ? `Balance Total: $${formatCurrency(stats.total)}` : `Total Efectivo: $${formatCurrency(stats.total)}`, 14, 36);
                 const tableColumn = ["Fecha", "Tipo", "Descripción", "Método", "Monto"];
                 const tableRows = cajaMovimientos.map(mov => [
                     new Date(mov.fecha).toLocaleString(),
@@ -225,16 +237,24 @@ const ReportesPage = () => {
                     mov.metodo_pago,
                     `$${formatCurrency(mov.monto)}`
                 ]);
-                autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
+                autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos + 6 });
              } else {
-                 const tableColumn = ["ID", "Apertura", "Cierre", "Saldo Inicial", "Saldo Final"];
-                 const tableRows = cajasHistory.map(caja => [
-                     caja.id,
-                     new Date(caja.fecha_apertura).toLocaleString(),
-                     caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'Abierta',
-                     `$${formatCurrency(caja.saldo_inicial)}`,
-                     caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'
-                 ]);
+                 const tableColumn = isAdmin 
+                    ? ["ID", "Apertura", "Cierre", "Saldo Inicial", "Saldo Final"]
+                    : ["ID", "Apertura", "Cierre"];
+                 
+                 const tableRows = cajasHistory.map(caja => {
+                     const row = [
+                        caja.id,
+                        new Date(caja.fecha_apertura).toLocaleString(),
+                        caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'Abierta'
+                     ];
+                     if (isAdmin) {
+                         row.push(`$${formatCurrency(caja.saldo_inicial)}`);
+                         row.push(caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-');
+                     }
+                     return row;
+                 });
                  autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
              }
         }
@@ -243,7 +263,7 @@ const ReportesPage = () => {
     };
 
     // Updated tabs list
-    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja'] : ['deudores'];
+    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja'] : ['deudores', 'caja'];
 
     return (
         <div className="space-y-6">
@@ -421,7 +441,7 @@ const ReportesPage = () => {
                         <p className="text-sm font-medium text-gray-500">
                             {activeTab === 'ventas' ? 'Ingresos Totales' : 
                              activeTab === 'jugadores' ? 'Total Jugadores' : 
-                             activeTab === 'caja' ? 'Balance Caja' : 'Deuda Total'}
+                             activeTab === 'caja' ? (isAdmin ? 'Balance Caja' : 'Total Efectivo') : 'Deuda Total'}
                         </p>
                         <p className={`text-3xl font-bold mt-2 ${activeTab === 'caja' ? (stats.total >= 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-900'}`}>
                             {activeTab === 'jugadores' ? stats.total : `$${formatCurrency(stats.total)}`}
@@ -501,8 +521,12 @@ const ReportesPage = () => {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apertura</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cierre</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Inicial</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Final</th>
+                                        {isAdmin && (
+                                            <>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Inicial</th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Final</th>
+                                            </>
+                                        )}
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </>
                                 )}
@@ -533,10 +557,14 @@ const ReportesPage = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : <span className="text-green-600 font-semibold">Abierta</span>}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${formatCurrency(caja.saldo_inicial)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium">
-                                                {caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'}
-                                            </td>
+                                            {isAdmin && (
+                                                <>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${formatCurrency(caja.saldo_inicial)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium">
+                                                        {caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'}
+                                                    </td>
+                                                </>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button onClick={() => handleSelectCaja(caja)} className="text-indigo-600 hover:text-indigo-900">
                                                     Ver Movimientos
