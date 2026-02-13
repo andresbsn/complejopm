@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '../utils/formatters';
 
 const ReservaGrid = ({ 
     timeSlots, 
@@ -78,7 +79,7 @@ const ReservaGrid = ({
                                                             reserva.estado === 'confirmado' ? 'text-blue-700' : 
                                                             reserva.estado === 'pendiente' ? 'text-yellow-700' :
                                                             reserva.estado === 'fijo' ? 'text-purple-700' : 'text-gray-700'
-                                                        }`}>
+                                                        }`}>fomatCurrncy(re)formatCurrency()
                                                             {reserva.estado === 'fijo' ? 'RESERVA FIJA' : `Pagado: $${reserva.monto_pagado || 0} / $${reserva.monto_total}`}
                                                         </div>
                                                     </div>
@@ -164,7 +165,7 @@ const ReservaGrid = ({
                                                       reserva.estado === 'fijo' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}
                                                 `}>
                                                     <span className="truncate w-full text-center font-bold">{reserva.cliente_nombre}</span>
-                                                    <span className="truncate w-full text-center text-[10px]">
+                                                    <span className="truncate w-full text-center tfoematCurrxncy(ret-[10px]">)formatCurrency()
                                                         {reserva.estado === 'fijo' ? 'FIJO' : `$${reserva.monto_pagado || 0} / $${reserva.monto_total}`}
                                                     </span>
                                                 </button>

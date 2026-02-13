@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { VentaService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrency } from '../utils/formatters';
 
 const VentaList = ({ refreshTrigger }) => {
     const [ventas, setVentas] = useState([]);
@@ -105,7 +106,7 @@ const VentaList = ({ refreshTrigger }) => {
                                     <span className="text-sm font-medium text-gray-500">#{venta.id}</span>
                                     <p className="text-sm text-gray-900">{new Date(venta.fecha).toLocaleString()}</p>
                                 </div>
-                                <span className="text-lg font-bold text-gray-900">${venta.total}</span>
+                                <span className="text-lg font-bold text-gray-900">${formatCurrency(venta.total)}</span>
                             </div>
                             <div className="flex justify-between items-center mt-3">
                                 <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full capitalize">
@@ -140,7 +141,7 @@ const VentaList = ({ refreshTrigger }) => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{venta.id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(venta.fecha).toLocaleString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{venta.metodo_pago || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">${venta.total}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">${formatCurrency(venta.total)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button 
                                             onClick={() => verDetalles(venta.id)}
@@ -184,8 +185,8 @@ const VentaList = ({ refreshTrigger }) => {
                                         <tr key={detalle.id}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{detalle.producto_nombre}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{detalle.cantidad}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${detalle.precio_unitario}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${(detalle.cantidad * detalle.precio_unitario).toFixed(2)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(detalle.precio_unitario)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${formatCurrency(detalle.cantidad * detalle.precio_unitario)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

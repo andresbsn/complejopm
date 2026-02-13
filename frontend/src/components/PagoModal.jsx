@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import api, { TurnoService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     const saldoPendiente = parseFloat(turno.monto_total) - parseFloat(turno.monto_pagado || 0);
     const [monto, setMonto] = useState(saldoPendiente);
     const [metodo, setMetodo] = useState('efectivo');
+    const [observaciones, setObservaciones] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCancelOptions, setShowCancelOptions] = useState(false);
 
@@ -29,7 +31,11 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                 turnoId = nuevoTurno.id;
             }
             
-            await api.post(`/turnos/${turnoId}/pagos`, { monto, metodo });
+            await api.post(`/turnos/${turnoId}/pagos`, { 
+                monto, 
+                metodo,
+                observaciones: metodo === 'gastos_generales' ? observaciones : null
+            });
             onPagoSuccess();
             onClose();
         } catch (error) {
@@ -118,15 +124,15 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                     <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Total Turno:</span>
-                            <span className="font-semibold">${turno.monto_total}</span>
+                            <span className="font-semibold">${formatCurrency(turno.monto_total)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Abonado:</span>
-                            <span className="text-green-600 font-semibold">${turno.monto_pagado || 0}</span>
+                            <span className="text-green-600 font-semibold">${formatCurrency(turno.monto_pagado || 0)}</span>
                         </div>
                         <div className="flex justify-between text-base border-t pt-2 mt-2">
                             <span className="font-bold text-gray-800">Restante:</span>
-                            <span className="font-bold text-red-600">${saldoPendiente}</span>
+                            <span className="font-bold text-red-600">${formatCurrency(saldoPendiente)}</span>
                         </div>
                     </div>
                     <form onSubmit={handleSubmit}>
@@ -151,8 +157,21 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 <option value="efectivo">Efectivo</option>
                                 <option value="transferencia">Transferencia</option>
                                 <option value="qr">QR</option>
+                                <option value="gastos_generales">Gastos Generales / Cortesía</option>
                             </select>
                         </div>
+                        {metodo === 'gastos_generales' && (
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Motivo / Observación</label>
+                                <textarea
+                                    value={observaciones}
+                                    onChange={(e) => setObservaciones(e.target.value)}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    rows="2"
+                                    placeholder="Ej: Ausencia rival, cortesía, etc."
+                                />
+                            </div>
+                        )}
                         <div className="flex flex-col gap-2">
                             <div className="flex gap-2">
                                 <button

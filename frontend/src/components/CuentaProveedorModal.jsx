@@ -92,7 +92,7 @@ const CuentaProveedorModal = ({ proveedor, onClose }) => {
                     <div>
                         <p className="text-sm text-gray-500">Monto Pendiente de Pago</p>
                         <p className={`text-3xl font-bold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            ${saldo.toFixed(2)}
+                            ${formatCurrency(saldo)}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
                             {saldo > 0 ? '(Debemos al proveedor)' : '(Saldo a favor / Saldado)'}
@@ -214,7 +214,7 @@ const CuentaProveedorModal = ({ proveedor, onClose }) => {
                                         <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
                                             mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
                                         }`}>
-                                            ${parseFloat(mov.monto).toFixed(2)}
+                                            ${formatCurrency(mov.monto)}
                                         </td>
                                     </tr>
                                 ))

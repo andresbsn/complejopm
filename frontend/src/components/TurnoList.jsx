@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TurnoService } from '../services/api';
 import PagoModal from './PagoModal';
+import { formatCurrency } from '../utils/formatters';
 
 const TurnoList = () => {
   const [turnos, setTurnos] = useState([]);
@@ -121,8 +122,8 @@ const TurnoList = () => {
                       <p className="text-sm font-medium text-gray-800 mt-1">{turno.cliente_nombre}</p>
                       <p className="text-xs text-gray-500">{turno.cliente_telefono}</p>
                       <div className="mt-2 text-right">
-                        {!turno.es_fijo && <span className="text-xs text-gray-500 block">Pagado: ${turno.monto_pagado}</span>}
-                        <span className="text-sm font-bold text-indigo-600">Total: ${turno.monto_total}</span>
+                        {!turno.es_fijo && <span className="text-xs text-gray-500 block">Pagado: ${formatCurrency(turno.monto_pagado)}</span>}
+                        <span className="text-sm font-bold text-indigo-600">Total: ${formatCurrency(turno.monto_total)}</span>
                       </div>
                     </div>
                   ))

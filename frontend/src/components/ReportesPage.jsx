@@ -3,6 +3,7 @@ import { ReporteService, CategoriaService, CajaService } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrency } from '../utils/formatters';
 
 const ReportesPage = () => {
     const { user } = useAuth();
@@ -104,8 +105,11 @@ const ReportesPage = () => {
             let byMethod = {};
             data.forEach(item => {
                 const monto = parseFloat(item.monto);
-                total += monto;
                 const method = item.metodo || 'Otros';
+                // Solo sumar al total de ingresos si NO es gastos generales (cortesía)
+                if (method !== 'gastos_generales') {
+                    total += monto;
+                }
                 if (!byMethod[method]) byMethod[method] = 0;
                 byMethod[method] += monto;
             });
@@ -179,35 +183,36 @@ const ReportesPage = () => {
         let yPos = 40;
 
         if (activeTab === 'ventas') {
-            doc.text(`Total Ingresos: $${stats.total.toFixed(2)}`, 14, 36);
-            const tableColumn = ["Fecha", "Descripción", "Tipo", "Método", "Monto"];
+            doc.text(`Total Ingresos: $${formatCurrency(stats.total)}`, 14, 36);
+            const tableColumn = ["Fecha", "Descripción", "Obs.", "Tipo", "Método", "Monto"];
             const tableRows = reportData.map(item => [
                 new Date(item.fecha).toLocaleString(),
                 item.descripcion,
+                item.observaciones || '-',
                 item.tipo,
                 item.metodo || '-',
-                `$${parseFloat(item.monto).toFixed(2)}`
+                `$${formatCurrency(item.monto)}`
             ]);
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
         } else if (activeTab === 'jugadores') {
             doc.text(`Total Jugadores: ${reportData.length}`, 14, 36);
             const tableColumn = ["Categoría", "Nombre", "Teléfono", "Email", "Saldo"];
             const tableRows = reportData.map(item => [
-                item.categoria_descripcion || 'Sin Categoría',
+                item.categoria_descripcion || '-',
                 item.nombre,
                 item.telefono || '-',
                 item.email || '-',
-                `$${parseFloat(item.saldo || 0).toFixed(2)}`
+                `$${formatCurrency(item.saldo)}`
             ]);
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
         } else if (activeTab === 'deudores') {
-            doc.text(`Deuda Total: $${stats.total.toFixed(2)}`, 14, 36);
-            const tableColumn = ["Nombre", "Categoría", "Teléfono", "Deuda"];
+            doc.text(`Total Deuda: $${formatCurrency(stats.total)}`, 14, 36);
+            const tableColumn = ["Nombre", "Teléfono", "Email", "Deuda"];
             const tableRows = reportData.map(item => [
                 item.nombre,
-                item.categoria_descripcion || '-',
                 item.telefono || '-',
-                `$${parseFloat(item.saldo || 0).toFixed(2)}`
+                item.email || '-',
+                `$${formatCurrency(item.saldo)}`
             ]);
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
         } else if (activeTab === 'caja') {
@@ -218,7 +223,7 @@ const ReportesPage = () => {
                     mov.tipo_movimiento,
                     mov.descripcion,
                     mov.metodo_pago,
-                    `$${parseFloat(mov.monto).toFixed(2)}`
+                    `$${formatCurrency(mov.monto)}`
                 ]);
                 autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
              } else {
@@ -227,8 +232,8 @@ const ReportesPage = () => {
                      caja.id,
                      new Date(caja.fecha_apertura).toLocaleString(),
                      caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'Abierta',
-                     `$${caja.saldo_inicial}`,
-                     caja.saldo_final ? `$${caja.saldo_final}` : '-'
+                     `$${formatCurrency(caja.saldo_inicial)}`,
+                     caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'
                  ]);
                  autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
              }
@@ -315,6 +320,7 @@ const ReportesPage = () => {
                                 <option value="transferencia">Transferencia</option>
                                 <option value="qr">QR</option>
                                 <option value="cuenta_corriente">Cuenta Corriente</option>
+                                <option value="gastos_generales">Gastos Generales / Cortesía</option>
                             </select>
                         </div>
                         <div className="flex gap-2">
@@ -418,7 +424,7 @@ const ReportesPage = () => {
                              activeTab === 'caja' ? 'Balance Caja' : 'Deuda Total'}
                         </p>
                         <p className={`text-3xl font-bold mt-2 ${activeTab === 'caja' ? (stats.total >= 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-900'}`}>
-                            {activeTab === 'jugadores' ? stats.total : `$${stats.total.toFixed(2)}`}
+                            {activeTab === 'jugadores' ? stats.total : `$${formatCurrency(stats.total)}`}
                         </p>
                         
                         {activeTab === 'caja' && selectedCaja && (
@@ -429,7 +435,7 @@ const ReportesPage = () => {
                                          <div key={method} className="flex justify-between items-center text-sm">
                                              <span className="text-gray-600 capitalize">{method}</span>
                                              <span className={`font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                 ${amount.toFixed(2)}
+                                                 ${formatCurrency(amount)}
                                              </span>
                                          </div>
                                      ))}
@@ -440,7 +446,7 @@ const ReportesPage = () => {
                     {activeTab === 'ventas' && Object.entries(stats.byMethod).map(([method, amount]) => (
                         <div key={method} className="bg-white p-6 rounded-lg shadow-sm border-gray-200 border">
                             <p className="text-sm font-medium text-gray-500 capitalize">{method}</p>
-                            <p className="text-2xl font-semibold text-gray-700 mt-2">${amount.toFixed(2)}</p>
+                            <p className="text-2xl font-semibold text-gray-700 mt-2">${formatCurrency(amount)}</p>
                         </div>
                     ))}
                 </div>
@@ -467,6 +473,7 @@ const ReportesPage = () => {
                                     <>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Obs.</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
@@ -526,9 +533,9 @@ const ReportesPage = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : <span className="text-green-600 font-semibold">Abierta</span>}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${caja.saldo_inicial}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${formatCurrency(caja.saldo_inicial)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium">
-                                                {caja.saldo_final ? `$${caja.saldo_final}` : '-'}
+                                                {caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button onClick={() => handleSelectCaja(caja)} className="text-indigo-600 hover:text-indigo-900">
@@ -553,7 +560,7 @@ const ReportesPage = () => {
                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
                                                 parseFloat(mov.monto) < 0 ? 'text-red-600' : 'text-green-600'
                                             }`}>
-                                                ${parseFloat(mov.monto).toFixed(2)}
+                                                ${formatCurrency(mov.monto)}
                                             </td>
                                         </tr>
                                     ))}
@@ -568,6 +575,9 @@ const ReportesPage = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                         {item.descripcion}
                                                     </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                                                        {item.observaciones || '-'}
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                             item.tipo === 'VENTA' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
@@ -579,7 +589,7 @@ const ReportesPage = () => {
                                                         {item.metodo || '-'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                                        ${parseFloat(item.monto).toFixed(2)}
+                                                        ${formatCurrency(item.monto)}
                                                     </td>
                                                 </>
                                             )}

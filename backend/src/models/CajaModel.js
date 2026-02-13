@@ -51,10 +51,10 @@ const CajaModel = {
 
     async getMovimientos(cajaId) {
         const query = `
-            SELECT 'VENTA' as tipo_movimiento, fecha, 'Venta Cantina #' || id as descripcion, total as monto, metodo_pago
+            SELECT 'VENTA' as tipo_movimiento, fecha, 'Venta Cantina #' || id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo_pago = 'gastos_generales' THEN 0 ELSE total END as monto, metodo_pago
             FROM ventas_cantina WHERE caja_id = $1
             UNION ALL
-            SELECT 'PAGO_TURNO' as tipo_movimiento, fecha_pago as fecha, 'Pago Turno #' || turno_id as descripcion, monto, metodo as metodo_pago
+            SELECT 'PAGO_TURNO' as tipo_movimiento, fecha_pago as fecha, 'Pago Turno #' || turno_id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
             FROM pagos WHERE caja_id = $1
             UNION ALL
             SELECT 'INSCRIPCION' as tipo_movimiento, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago

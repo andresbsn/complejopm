@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GastoService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 const GastosPage = () => {
     const [gastos, setGastos] = useState([]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CompraService, ProductoService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import { formatCurrency } from '../utils/formatters';
 
 const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }) => {
     const [proveedorId, setProveedorId] = useState(initialData?.proveedor_id || '');
@@ -160,7 +161,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
                                     required
                                 />
                                 <div className="w-24 text-right text-sm font-semibold">
-                                    ${(item.cantidad * item.costo_unitario).toFixed(2)}
+                                    ${formatCurrency(item.cantidad * item.costo_unitario)}
                                 </div>
                                 <button type="button" onClick={() => handleRemoveItem(index)} className="text-red-500 font-bold">
                                     &times;
@@ -172,7 +173,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
 
                 <div className="flex justify-between items-center text-xl font-bold border-t pt-4 mt-4">
                     <span>Total Compra:</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                    <span>${formatCurrency(calculateTotal())}</span>
                 </div>
 
                 <div className="flex justify-between gap-2 mt-6">

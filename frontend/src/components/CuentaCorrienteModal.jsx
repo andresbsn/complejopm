@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CuentaService, VentaService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 const CuentaCorrienteModal = ({ jugador, onClose }) => {
     const [movimientos, setMovimientos] = useState([]);
@@ -116,7 +117,7 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                         <div>
                             <p className="text-sm text-gray-500">Saldo Actual</p>
                             <p className={`text-3xl font-bold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                ${saldo.toFixed(2)}
+                                ${formatCurrency(saldo)}
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
                                 {saldo > 0 ? '(Debe dinero)' : '(A favor/Saldado)'}
@@ -244,7 +245,7 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                                                 <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
                                                     mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
                                                 }`}>
-                                                    ${parseFloat(mov.monto).toFixed(2)}
+                                                    ${formatCurrency(mov.monto)}
                                                 </td>
                                                 <td className="px-3 py-4 text-right text-sm">
                                                     {mov.referencia_id && (
@@ -268,7 +269,7 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                                                                     {detailsCache[mov.referencia_id].map((detalle, idx) => (
                                                                         <li key={idx} className="flex justify-between border-b last:border-0 border-gray-100 pb-1">
                                                                             <span>{detalle.producto_nombre} <span className="text-gray-400">x{detalle.cantidad}</span></span>
-                                                                            <span>${detalle.subtotal}</span>
+                                                                            <span>${formatCurrency(detalle.subtotal || (detalle.cantidad * detalle.precio_unitario))}</span>
                                                                         </li>
                                                                     ))}
                                                                 </ul>

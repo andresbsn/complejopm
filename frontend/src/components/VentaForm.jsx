@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductoService, VentaService, JugadorService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import { formatCurrency } from '../utils/formatters';
 
 const VentaForm = ({ onVentaCreated }) => {
     const [productos, setProductos] = useState([]);
@@ -11,6 +12,7 @@ const VentaForm = ({ onVentaCreated }) => {
     const [metodoPago, setMetodoPago] = useState('efectivo');
     const [jugadores, setJugadores] = useState([]);
     const [selectedJugador, setSelectedJugador] = useState(null);
+    const [observaciones, setObservaciones] = useState('');
 
     useEffect(() => {
         cargarProductos();
@@ -102,12 +104,14 @@ const VentaForm = ({ onVentaCreated }) => {
                 items: carrito,
                 total: calcularTotal(),
                 metodo_pago: metodoPago,
-                jugador_id: metodoPago === 'cuenta_corriente' ? selectedJugador.id : null
+                jugador_id: metodoPago === 'cuenta_corriente' ? selectedJugador.id : null,
+                observaciones: metodoPago === 'gastos_generales' ? observaciones : null
             };
             await VentaService.create(ventaData);
             setMensaje({ type: 'success', text: 'Venta realizada con éxito' });
             setCarrito([]);
             setMetodoPago('efectivo');
+            setObservaciones('');
             setSelectedJugador(null);
             cargarProductos(); // Recargar para actualizar stock
             if (onVentaCreated) onVentaCreated();
@@ -163,7 +167,7 @@ const VentaForm = ({ onVentaCreated }) => {
                                         {producto.stock}
                                     </span>
                                 </div>
-                                <div className="text-indigo-600 font-bold text-base md:text-lg">${producto.precio}</div>
+                                <div className="text-indigo-600 font-bold text-base md:text-lg">${formatCurrency(producto.precio)}</div>
                                 <div className="text-xs text-gray-500 mt-0.5 md:mt-1 capitalize truncate w-full">{producto.categoria}</div>
                             </button>
                         ))}
@@ -189,7 +193,7 @@ const VentaForm = ({ onVentaCreated }) => {
                             <div key={item.producto_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg group">
                                 <div className="flex-1">
                                     <h4 className="font-medium text-gray-900">{item.nombre}</h4>
-                                    <div className="text-sm text-gray-500">${item.precio_unitario} x {item.cantidad}</div>
+                                    <div className="text-sm text-gray-500">${formatCurrency(item.precio_unitario)} x {item.cantidad}</div>
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <div className="flex items-center bg-white rounded-md border border-gray-200">
@@ -208,7 +212,7 @@ const VentaForm = ({ onVentaCreated }) => {
                                         </button>
                                     </div>
                                     <div className="text-right min-w-[60px]">
-                                        <div className="font-semibold text-gray-900">${(item.precio_unitario * item.cantidad).toFixed(2)}</div>
+                                        <div className="font-semibold text-gray-900">${formatCurrency(item.precio_unitario * item.cantidad)}</div>
                                         <button 
                                             onClick={() => eliminarDelCarrito(item.producto_id)}
                                             className="text-xs text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -240,6 +244,7 @@ const VentaForm = ({ onVentaCreated }) => {
                             <option value="transferencia">Transferencia</option>
                             <option value="qr">QR</option>
                             <option value="cuenta_corriente">Cuenta Corriente</option>
+                            <option value="gastos_generales">Gastos Generales / Cortesía</option>
                         </select>
                     </div>
 
@@ -260,9 +265,22 @@ const VentaForm = ({ onVentaCreated }) => {
                         </div>
                     )}
 
+                    {metodoPago === 'gastos_generales' && (
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Motivo / Observación (Opcional)</label>
+                            <textarea
+                                value={observaciones}
+                                onChange={(e) => setObservaciones(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                rows="2"
+                                placeholder="Ej: Invitación especial, canje, etc."
+                            />
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-center mb-4">
                         <span className="text-gray-600">Total a Pagar</span>
-                        <span className="text-2xl font-bold text-gray-900">${calcularTotal().toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-gray-900">${formatCurrency(calcularTotal())}</span>
                     </div>
                     <button 
                         onClick={finalizarVenta}

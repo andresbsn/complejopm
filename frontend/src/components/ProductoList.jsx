@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '../utils/formatters';
 
 const ProductoList = ({ productos, onEdit, onDelete }) => {
     if (!productos || productos.length === 0) {
@@ -48,11 +49,11 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
                             </div>
                             <div>
                                 <span className="text-gray-500 text-xs">Costo:</span>
-                                <p className="font-medium text-gray-900">${producto.costo}</p>
+                                <p className="font-medium text-gray-900">${formatCurrency(producto.costo)}</p>
                             </div>
                             <div>
                                 <span className="text-gray-500 text-xs">Precio:</span>
-                                <p className="font-semibold text-gray-900">${producto.precio}</p>
+                                <p className="font-semibold text-gray-900">${formatCurrency(producto.precio)}</p>
                             </div>
                         </div>
                         
@@ -96,8 +97,8 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{producto.nombre}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.categoria}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.proveedor_nombre || '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${producto.costo}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${producto.precio}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(producto.costo)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${formatCurrency(producto.precio)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex items-center gap-2">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

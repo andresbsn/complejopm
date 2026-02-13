@@ -7,7 +7,7 @@ const reporteController = {
 
             let finalQuery = `
                 SELECT * FROM (
-                    SELECT id, fecha, 'VENTA' as tipo, 'Venta Cantina #' || id as descripcion, metodo_pago as metodo, total as monto FROM ventas_cantina
+                    SELECT id, fecha, 'VENTA' as tipo, 'Venta Cantina #' || id as descripcion, metodo_pago as metodo, total as monto, observaciones FROM ventas_cantina
                     UNION ALL
                     SELECT 
                         p.id, 
@@ -15,7 +15,8 @@ const reporteController = {
                         'RESERVA' as tipo, 
                         'Pago Turno ' || CASE WHEN c.tipo = 'PADEL' THEN 'Padel' ELSE 'Fútbol' END || ' ' || c.nombre as descripcion, 
                         p.metodo, 
-                        p.monto 
+                        p.monto,
+                        p.observaciones
                     FROM pagos p
                     JOIN turnos t ON p.turno_id = t.id
                     JOIN canchas c ON t.cancha_id = c.id
@@ -26,7 +27,8 @@ const reporteController = {
                         'INSCRIPCION' as tipo,
                         'Inscripción Torneo: ' || t.descripcion || ' - ' || j.nombre as descripcion,
                         i.metodo_pago as metodo,
-                        i.monto_abonado as monto
+                        i.monto_abonado as monto,
+                        NULL as observaciones
                     FROM inscripciones i
                     JOIN torneos t ON i.torneo_id = t.id
                     JOIN jugadores j ON i.jugador_id = j.id

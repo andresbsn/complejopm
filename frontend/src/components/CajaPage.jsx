@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CajaService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 const CajaPage = () => {
     const [caja, setCaja] = useState(null);
@@ -163,11 +164,11 @@ const CajaPage = () => {
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Saldo Inicial:</span>
-                                            <span className="font-medium">${parseFloat(caja.saldo_inicial).toFixed(2)}</span>
+                                            <span className="font-medium">${formatCurrency(caja.saldo_inicial)}</span>
                                         </div>
                                         <div className="flex justify-between text-lg font-bold border-t pt-3">
                                             <span className="text-gray-800">Saldo Calculado:</span>
-                                            <span className="text-green-600">${calcularSaldoActual().toFixed(2)}</span>
+                                            <span className="text-green-600">${formatCurrency(calcularSaldoActual())}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -183,7 +184,7 @@ const CajaPage = () => {
                                                 value={saldoFinalReal} 
                                                 onChange={(e) => setSaldoFinalReal(e.target.value)}
                                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                                placeholder={calcularSaldoActual().toFixed(2)}
+                                                placeholder={formatCurrency(calcularSaldoActual())}
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Si se deja vacío, se usará el saldo calculado.</p>
                                         </div>
@@ -233,7 +234,7 @@ const CajaPage = () => {
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{mov.descripcion}</td>
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{mov.metodo_pago}</td>
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right font-medium">
-                                                                ${parseFloat(mov.monto).toFixed(2)}
+                                                                ${formatCurrency(mov.monto)}
                                                             </td>
                                                         </tr>
                                                     ))
@@ -267,8 +268,8 @@ const CajaPage = () => {
                                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">#{cajas.id}</td>
                                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{new Date(cajas.fecha_apertura).toLocaleString()}</td>
                                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{cajas.fecha_cierre ? new Date(cajas.fecha_cierre).toLocaleString() : '-'}</td>
-                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">${parseFloat(cajas.saldo_inicial).toFixed(2)}</td>
-                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">{cajas.saldo_final ? `$${parseFloat(cajas.saldo_final).toFixed(2)}` : '-'}</td>
+                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">${formatCurrency(cajas.saldo_inicial)}</td>
+                                    <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">{cajas.saldo_final ? `$${formatCurrency(cajas.saldo_final)}` : '-'}</td>
                                     <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
                                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                             cajas.estado === 'abierta' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'

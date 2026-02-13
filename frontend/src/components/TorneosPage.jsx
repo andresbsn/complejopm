@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TorneoService } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 const TorneosPage = () => {
     const [torneos, setTorneos] = useState([]);
@@ -103,7 +104,7 @@ const TorneosPage = () => {
                                                 {/* <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{torneo.cantidad_abandonos || 0}</td> */}
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-green-600 font-medium">{torneo.cantidad_pagados || 0}</td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-red-600 font-medium">{torneo.cantidad_impagos || 0}</td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${torneo.costo_inscripcion}</td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${formatCurrency(torneo.costo_inscripcion)}</td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <Link 
                                                         to={`/torneos/${torneo.id}`}

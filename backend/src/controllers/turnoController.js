@@ -45,10 +45,15 @@ const TurnoController = {
     async registrarPago(req, res) {
         try {
             const { id } = req.params; // turno_id
-            const { monto, metodo } = req.body;
+            const { monto, metodo, observaciones } = req.body;
 
             const PagoModel = require('../models/PagoModel'); // Lazy load to avoid circular deps if any
-            const pago = await PagoModel.create({ turno_id: id, monto, metodo });
+            const pago = await PagoModel.create({ 
+                turno_id: id, 
+                monto, 
+                metodo,
+                observaciones
+            });
 
             res.status(201).json(pago);
         } catch (error) {

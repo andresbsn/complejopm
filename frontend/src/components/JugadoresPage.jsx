@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { JugadorService, CategoriaService } from '../services/api';
 import CuentaCorrienteModal from './CuentaCorrienteModal';
+import { formatCurrency } from '../utils/formatters';
 
 const JugadoresPage = () => {
     const [jugadores, setJugadores] = useState([]);
@@ -149,7 +150,7 @@ const JugadoresPage = () => {
                                             <span className={`text-sm font-semibold ${
                                                 parseFloat(jugador.saldo) > 0 ? 'text-red-600' : 'text-green-600'
                                             }`}>
-                                                ${parseFloat(jugador.saldo || 0).toFixed(2)}
+                                                ${formatCurrency(jugador.saldo || 0)}
                                             </span>
                                         </div>
                                         <div className="text-sm text-gray-500 space-y-1 mb-3">
@@ -210,7 +211,7 @@ const JugadoresPage = () => {
                                                 <td className={`whitespace-nowrap px-3 py-4 text-sm font-semibold ${
                                                     parseFloat(jugador.saldo) > 0 ? 'text-red-600' : 'text-green-600'
                                                 }`}>
-                                                    ${parseFloat(jugador.saldo || 0).toFixed(2)}
+                                                    ${formatCurrency(jugador.saldo || 0)}
                                                 </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <button 

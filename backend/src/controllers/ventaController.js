@@ -3,7 +3,10 @@ const VentaModel = require('../models/VentaModel');
 const ventaController = {
     createVenta: async (req, res) => {
         try {
-            const venta = await VentaModel.create(req.body);
+            const venta = await VentaModel.create({
+                ...req.body,
+                usuario_id: req.user.id
+            });
             res.status(201).json(venta);
         } catch (error) {
             console.error('Error al crear venta:', error);

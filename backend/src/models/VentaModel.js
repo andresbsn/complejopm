@@ -11,16 +11,16 @@ const VentaModel = {
             const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
             const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
 
-            const { items, total, metodo_pago, jugador_id } = ventaData;
+            const { items, total, metodo_pago, jugador_id, observaciones, usuario_id } = ventaData;
 
             // 1. Insertar la venta
             // Nota: Si método de pago es cuenta_corriente, registramos la venta igual.
             const ventaQuery = `
-                INSERT INTO ventas_cantina (total, metodo_pago, caja_id)
-                VALUES ($1, $2, $3)
+                INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones)
+                VALUES ($1, $2, $3, $4)
                 RETURNING *
             `;
-            const ventaResult = await client.query(ventaQuery, [total, metodo_pago, cajaId]);
+            const ventaResult = await client.query(ventaQuery, [total, metodo_pago, cajaId, observaciones]);
             const venta = ventaResult.rows[0];
 
             // 1.5 Si es cuenta corriente, registrar movimiento en cuenta del jugador
@@ -39,22 +39,29 @@ const VentaModel = {
                 ]);
             }
 
+            let costoTotalVenta = 0;
+
             // 2. Insertar detalles y actualizar stock
             for (const item of items) {
                 const { producto_id, cantidad, precio_unitario } = item;
 
-                // Validar stock
-                const stockQuery = 'SELECT stock FROM productos WHERE id = $1 FOR UPDATE';
-                const stockResult = await client.query(stockQuery, [producto_id]);
+                // Validar stock y obtener costo
+                const prodQuery = 'SELECT stock, costo FROM productos WHERE id = $1 FOR UPDATE';
+                const prodResult = await client.query(prodQuery, [producto_id]);
 
-                if (stockResult.rows.length === 0) {
+                if (prodResult.rows.length === 0) {
                     throw new Error(`Producto ${producto_id} no encontrado`);
                 }
 
-                const currentStock = stockResult.rows[0].stock;
+                const product = prodResult.rows[0];
+                const currentStock = product.stock;
+                const costoUnitario = parseFloat(product.costo || 0);
+
                 if (currentStock < cantidad) {
                     throw new Error(`Stock insuficiente para el producto ${producto_id}`);
                 }
+
+                costoTotalVenta += (costoUnitario * cantidad);
 
                 // Insertar detalle
                 const detalleQuery = `
@@ -71,6 +78,20 @@ const VentaModel = {
                     WHERE id = $2
                 `;
                 await client.query(updateStockQuery, [cantidad, producto_id]);
+            }
+
+            // 3. Si es cortesía/gasto general, generar un gasto por el COSTO de los productos
+            if (metodo_pago === 'gastos_generales') {
+                const gastoQuery = `
+                    INSERT INTO gastos (descripcion, monto, caja_id, usuario_id)
+                    VALUES ($1, $2, $3, $4)
+                `;
+                await client.query(gastoQuery, [
+                    `Cortesía/Gasto Cantina (Venta #${venta.id})`,
+                    costoTotalVenta,
+                    cajaId,
+                    usuario_id
+                ]);
             }
 
             await client.query('COMMIT');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProveedorService, CompraService } from '../services/api'; // Added CompraService
 import CuentaProveedorModal from './CuentaProveedorModal';
 import CompraForm from './CompraForm';
+import { formatCurrency } from '../utils/formatters';
 
 const ProveedoresPage = () => {
     const [activeTab, setActiveTab] = useState('proveedores'); // 'proveedores', 'compras'
@@ -213,7 +214,7 @@ const ProveedoresPage = () => {
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                     parseFloat(prov.saldo) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                                                 }`}>
-                                                    ${parseFloat(prov.saldo || 0).toFixed(2)}
+                                                    ${formatCurrency(prov.saldo || 0)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
@@ -269,7 +270,7 @@ const ProveedoresPage = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{compra.id}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(compra.fecha).toLocaleDateString()}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{compra.proveedor_nombre}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${parseFloat(compra.total).toFixed(2)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${formatCurrency(compra.total)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                     compra.estado === 'RECIBIDO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'

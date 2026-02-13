@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { TorneoService, JugadorService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
+import { formatCurrency } from '../utils/formatters';
 
 const TorneoDetailsPage = () => {
     const { id } = useParams();
