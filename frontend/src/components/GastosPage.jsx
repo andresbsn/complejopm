@@ -132,7 +132,7 @@ const GastosPage = () => {
                                         {gasto.usuario_nombre || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold text-right">
-                                        -${parseFloat(gasto.monto).toFixed(2)}
+                                        -${formatCurrency(gasto.monto)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium hidden md:table-cell">
                                         <button 

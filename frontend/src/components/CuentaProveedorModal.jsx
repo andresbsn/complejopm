@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ProveedorService } from '../services/api';
 
+import { formatCurrency } from '../utils/formatters';
+
 const CuentaProveedorModal = ({ proveedor, onClose }) => {
     const [movimientos, setMovimientos] = useState([]);
     const [saldo, setSaldo] = useState(0); // Positive = We Owe (Deuda)

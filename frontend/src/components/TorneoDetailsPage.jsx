@@ -132,7 +132,7 @@ const TorneoDetailsPage = () => {
                             Fecha Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString()}
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            Costo Inscripción: <span className="font-semibold text-gray-900">${torneo.costo_inscripcion}</span>
+                            Costo Inscripción: <span className="font-semibold text-gray-900">${formatCurrency(torneo.costo_inscripcion)}</span>
                         </p>
                     </div>
                     <div className="mt-4 sm:mt-0">
@@ -207,7 +207,7 @@ const TorneoDetailsPage = () => {
                                             )}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            {inscripcion.monto_abonado > 0 ? `$${inscripcion.monto_abonado}` : '-'}
+                                            {inscripcion.monto_abonado > 0 ? `$${formatCurrency(inscripcion.monto_abonado)}` : '-'}
                                         </td>
                                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                             {!inscripcion.pagado && (!inscripcion.estado || inscripcion.estado === 'inscripto') && (
