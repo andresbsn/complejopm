@@ -103,7 +103,42 @@ const GastosPage = () => {
                 </form>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobile Cards View */}
+            <div className="md:hidden space-y-4">
+                {loading ? (
+                    <div className="text-center py-4 text-gray-500">Cargando gastos...</div>
+                ) : gastos.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">No hay gastos registrados.</div>
+                ) : (
+                    gastos.map((gasto) => (
+                        <div key={gasto.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 className="text-base font-semibold text-gray-900">{gasto.descripcion}</h4>
+                                    <p className="text-xs text-gray-500 mt-1">{new Date(gasto.fecha).toLocaleDateString()}</p>
+                                </div>
+                                <span className="text-red-600 font-bold text-sm">
+                                    -${formatCurrency(gasto.monto)}
+                                </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-3">
+                                <span className="text-gray-400 text-xs">Registrado por:</span> {gasto.usuario_nombre || '-'}
+                            </div>
+                            <div className="flex justify-end pt-3 border-t border-gray-100">
+                                <button
+                                    onClick={() => handleDelete(gasto.id)}
+                                    className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
+                                >
+                                    <span>🗑</span> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>

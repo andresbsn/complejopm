@@ -112,7 +112,37 @@ const UsuariosTab = () => {
             </div>
 
             {/* Users List */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobile Cards View */}
+            <div className="md:hidden space-y-4">
+                {users.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">No se encontraron usuarios.</div>
+                ) : (
+                    users.map((u) => (
+                        <div key={u.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 className="font-semibold text-gray-900">{u.nombre}</h3>
+                                    <p className="text-xs text-gray-500">@{u.username}</p>
+                                </div>
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.rol === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
+                                    {u.rol}
+                                </span>
+                            </div>
+                            <div className="flex justify-end pt-3 border-t border-gray-100 mt-2">
+                                <button 
+                                    onClick={() => handleDelete(u.id)}
+                                    className="text-red-600 hover:text-red-900 text-sm font-medium flex items-center gap-1"
+                                >
+                                    <span>🗑</span> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900">Usuarios del Sistema</h3>
                 </div>

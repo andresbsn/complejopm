@@ -172,7 +172,65 @@ const TorneoDetailsPage = () => {
                         </div>
                     </div>
                 </div>
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
+                {/* Mobile Cards View */}
+                <div className="md:hidden space-y-4">
+                    {filteredInscripciones.length > 0 ? (
+                        filteredInscripciones.map((inscripcion) => (
+                            <div key={inscripcion.id} className="bg-white shadow rounded-lg p-4 border border-gray-200">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 className="text-lg font-medium text-gray-900">{inscripcion.jugador_nombre}</h3>
+                                        <p className="text-sm text-gray-500">Categoría: {inscripcion.jugador_categoria || '-'}</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        {inscripcion.pagado ? (
+                                            <span className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
+                                                Pagado
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold leading-5 text-yellow-800">
+                                                Pendiente
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-600">
+                                        Monto Abonado: <span className="font-semibold text-gray-900">{inscripcion.monto_abonado > 0 ? `$${formatCurrency(inscripcion.monto_abonado)}` : '-'}</span>
+                                    </p>
+                                </div>
+                                <div className="flex justify-end gap-3 mt-4 border-t pt-3">
+                                    {!inscripcion.pagado && (!inscripcion.estado || inscripcion.estado === 'inscripto') && (
+                                        <button
+                                            onClick={() => handleOpenPayment(inscripcion)}
+                                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                        >
+                                            Cobrar
+                                        </button>
+                                    )}
+                                    {(!inscripcion.estado || inscripcion.estado === 'inscripto') && (
+                                        <button
+                                            onClick={() => handleBaja(inscripcion)}
+                                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                        >
+                                            Baja
+                                        </button>
+                                    )}
+                                    {inscripcion.estado === 'baja' && (
+                                        <span className="text-red-500 font-medium text-sm self-center">Baja</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="bg-white shadow rounded-lg p-4 text-center text-gray-500">
+                            No hay jugadores inscriptos.
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
                     <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                             <tr>

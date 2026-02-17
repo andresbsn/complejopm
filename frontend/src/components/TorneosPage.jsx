@@ -66,7 +66,46 @@ const TorneosPage = () => {
             </div>
 
             <div className="mt-8 flex flex-col">
-                <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                {/* Mobile Cards View */}
+                <div className="md:hidden space-y-4">
+                    {loading ? (
+                        <div className="text-center text-sm text-gray-500 py-4">Cargando...</div>
+                    ) : torneos.length === 0 ? (
+                        <div className="text-center text-sm text-gray-500 py-4">No hay torneos registrados.</div>
+                    ) : (
+                        torneos.map((torneo) => (
+                            <div key={torneo.id} className="bg-white shadow rounded-lg p-4 border border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">{torneo.descripcion}</h3>
+                                <div className="text-sm text-gray-500 mb-4">
+                                    <p>Fecha Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString()}</p>
+                                    <p>Costo: ${formatCurrency(torneo.costo_inscripcion)}</p>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                                    <div className="bg-gray-50 p-2 rounded">
+                                        <span className="block text-xs text-gray-500">Inscriptos</span>
+                                        <span className="block font-semibold text-gray-900">{torneo.cantidad_inscriptos || 0}</span>
+                                    </div>
+                                    <div className="bg-green-50 p-2 rounded">
+                                        <span className="block text-xs text-green-700">Pagados</span>
+                                        <span className="block font-semibold text-green-700">{torneo.cantidad_pagados || 0}</span>
+                                    </div>
+                                    <div className="bg-red-50 p-2 rounded">
+                                        <span className="block text-xs text-red-700">Faltan</span>
+                                        <span className="block font-semibold text-red-700">{torneo.cantidad_impagos || 0}</span>
+                                    </div>
+                                </div>
+                                <Link 
+                                    to={`/torneos/${torneo.id}`}
+                                    className="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                                >
+                                    Ver Detalle
+                                </Link>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="hidden md:block -my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                             <table className="min-w-full divide-y divide-gray-300">

@@ -181,126 +181,227 @@ const ProveedoresPage = () => {
 
             {/* Content */}
             {activeTab === 'proveedores' ? (
-                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto / Detalles</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo (Deuda)</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {loading && proveedores.length === 0 ? (
-                                    <tr><td colSpan="4" className="text-center py-8">Cargando proveedores...</td></tr>
-                                ) : filteredProveedores.length === 0 ? (
-                                    <tr><td colSpan="4" className="text-center py-8 text-gray-500">No se encontraron proveedores.</td></tr>
-                                ) : (
-                                    filteredProveedores.map((prov) => (
-                                        <tr key={prov.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{prov.nombre}</div>
-                                                <div className="text-xs text-gray-400">ID: {prov.id}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{prov.contacto || '-'}</div>
-                                                <div className="text-xs text-gray-500">{prov.email}</div>
-                                                <div className="text-xs text-gray-500">{prov.telefono}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {/* Saldo logic: Positive = We Owe */}
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    parseFloat(prov.saldo) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                    ${formatCurrency(prov.saldo || 0)}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                                                <button 
-                                                    onClick={() => setSelectedProviderForAccount(prov)}
-                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md"
-                                                >
-                                                    Ver Cuenta
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleEdit(prov)}
-                                                    className="text-gray-600 hover:text-gray-900"
-                                                >
-                                                    Editar
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(prov.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Eliminar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                 <>
+                    {/* Mobile Cards for Proveedores */}
+                    <div className="md:hidden space-y-4">
+                        {loading && proveedores.length === 0 ? (
+                            <div className="text-center py-4 text-gray-500">Cargando proveedores...</div>
+                        ) : filteredProveedores.length === 0 ? (
+                            <div className="text-center py-4 text-gray-500">No se encontraron proveedores.</div>
+                        ) : (
+                            filteredProveedores.map((prov) => (
+                                <div key={prov.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">{prov.nombre}</h3>
+                                            <span className="text-xs text-gray-400">ID: {prov.id}</span>
+                                        </div>
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                            parseFloat(prov.saldo) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                        }`}>
+                                            ${formatCurrency(prov.saldo || 0)}
+                                        </span>
+                                    </div>
+                                    <div className="text-sm text-gray-600 space-y-1 mb-3">
+                                        {prov.contacto && <p>👤 {prov.contacto}</p>}
+                                        {prov.email && <p>✉️ {prov.email}</p>}
+                                        {prov.telefono && <p>📞 {prov.telefono}</p>}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                                        <button 
+                                            onClick={() => setSelectedProviderForAccount(prov)}
+                                            className="flex-1 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-100"
+                                        >
+                                            Ver Cuenta
+                                        </button>
+                                        <button 
+                                            onClick={() => handleEdit(prov)}
+                                            className="flex-1 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-100"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(prov.id)}
+                                            className="flex-1 bg-red-50 text-red-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-100"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
-                </div>
-            ) : (
-                // COMPRAS TAB
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                         <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {loading && compras.length === 0 ? (
-                                    <tr><td colSpan="6" className="text-center py-8">Cargando compras...</td></tr>
-                                ) : filteredCompras.length === 0 ? (
-                                    <tr><td colSpan="6" className="text-center py-8 text-gray-500">No se encontraron compras.</td></tr>
-                                ) : (
-                                    filteredCompras.map((compra) => (
-                                        <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{compra.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(compra.fecha).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{compra.proveedor_nombre}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${formatCurrency(compra.total)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                    compra.estado === 'RECIBIDO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                                }`}>
-                                                    {compra.estado}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                                                 <button 
-                                                    onClick={() => handleEditCompra(compra.id)}
-                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md"
-                                                >
-                                                    ver / Editar
-                                                </button>
-                                                {compra.estado === 'PENDIENTE' && (
+
+                    {/* Desktop Table for Proveedores */}
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto / Detalles</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo (Deuda)</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {loading && proveedores.length === 0 ? (
+                                        <tr><td colSpan="4" className="text-center py-8">Cargando proveedores...</td></tr>
+                                    ) : filteredProveedores.length === 0 ? (
+                                        <tr><td colSpan="4" className="text-center py-8 text-gray-500">No se encontraron proveedores.</td></tr>
+                                    ) : (
+                                        filteredProveedores.map((prov) => (
+                                            <tr key={prov.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm font-medium text-gray-900">{prov.nombre}</div>
+                                                    <div className="text-xs text-gray-400">ID: {prov.id}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{prov.contacto || '-'}</div>
+                                                    <div className="text-xs text-gray-500">{prov.email}</div>
+                                                    <div className="text-xs text-gray-500">{prov.telefono}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {/* Saldo logic: Positive = We Owe */}
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                        parseFloat(prov.saldo) > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                    }`}>
+                                                        ${formatCurrency(prov.saldo || 0)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                                     <button 
-                                                        onClick={() => handleDeleteCompra(compra.id)}
+                                                        onClick={() => setSelectedProviderForAccount(prov)}
+                                                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md"
+                                                    >
+                                                        Ver Cuenta
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleEdit(prov)}
+                                                        className="text-gray-600 hover:text-gray-900"
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(prov.id)}
                                                         className="text-red-600 hover:text-red-900"
                                                     >
                                                         Eliminar
                                                     </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                 </>
+            ) : (
+                // COMPRAS TAB
+                <>
+                    {/* Mobile Cards for Compras */}
+                    <div className="md:hidden space-y-4">
+                        {loading && compras.length === 0 ? (
+                            <div className="text-center py-4 text-gray-500">Cargando compras...</div>
+                        ) : filteredCompras.length === 0 ? (
+                            <div className="text-center py-4 text-gray-500">No se encontraron compras.</div>
+                        ) : (
+                            filteredCompras.map((compra) => (
+                                <div key={compra.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">Compra #{compra.id}</h3>
+                                            <p className="text-xs text-gray-500">{new Date(compra.fecha).toLocaleDateString()}</p>
+                                        </div>
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                            compra.estado === 'RECIBIDO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                        }`}>
+                                            {compra.estado}
+                                        </span>
+                                    </div>
+                                    <div className="mb-3">
+                                        <p className="text-sm text-gray-600">Proveedor: <span className="font-medium text-gray-900">{compra.proveedor_nombre}</span></p>
+                                        <p className="text-lg font-bold text-gray-900 mt-1">${formatCurrency(compra.total)}</p>
+                                    </div>
+                                    <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                                        <button 
+                                            onClick={() => handleEditCompra(compra.id)}
+                                            className="text-indigo-600 hover:text-indigo-900 font-medium text-sm"
+                                        >
+                                            Ver / Editar
+                                        </button>
+                                        {compra.estado === 'PENDIENTE' && (
+                                            <button 
+                                                onClick={() => handleDeleteCompra(compra.id)}
+                                                className="text-red-600 hover:text-red-900 font-medium text-sm ml-3"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Desktop Table for Compras */}
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {loading && compras.length === 0 ? (
+                                        <tr><td colSpan="6" className="text-center py-8">Cargando compras...</td></tr>
+                                    ) : filteredCompras.length === 0 ? (
+                                        <tr><td colSpan="6" className="text-center py-8 text-gray-500">No se encontraron compras.</td></tr>
+                                    ) : (
+                                        filteredCompras.map((compra) => (
+                                            <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{compra.id}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(compra.fecha).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{compra.proveedor_nombre}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${formatCurrency(compra.total)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                        compra.estado === 'RECIBIDO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                    }`}>
+                                                        {compra.estado}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                                                    <button 
+                                                        onClick={() => handleEditCompra(compra.id)}
+                                                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md"
+                                                    >
+                                                        ver / Editar
+                                                    </button>
+                                                    {compra.estado === 'PENDIENTE' && (
+                                                        <button 
+                                                            onClick={() => handleDeleteCompra(compra.id)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* Create/Edit Provider Modal */}

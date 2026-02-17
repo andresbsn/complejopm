@@ -50,24 +50,40 @@ const CajaModel = {
     },
 
     async getMovimientos(cajaId) {
+        // 1. Obtener rango de fechas de la caja
+        const cajaQuery = "SELECT fecha_apertura, fecha_cierre FROM cajas WHERE id = $1";
+        const cajaRes = await pool.query(cajaQuery, [cajaId]);
+
+        if (cajaRes.rows.length === 0) return [];
+
+        const { fecha_apertura, fecha_cierre } = cajaRes.rows[0];
+
+        // 2. Buscar movimientos por FECHA en lugar de por ID de caja
+        // Esto corrige el problema de movimientos "huérfanos" o mal asignados,
+        // asegurando que el reporte muestre todo lo que pasó mientras la caja estaba abierta.
         const query = `
             SELECT 'VENTA' as tipo_movimiento, fecha, 'Venta Cantina #' || id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo_pago = 'gastos_generales' THEN 0 ELSE total END as monto, metodo_pago
-            FROM ventas_cantina WHERE caja_id = $1
+            FROM ventas_cantina 
+            WHERE fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             UNION ALL
             SELECT 'PAGO_TURNO' as tipo_movimiento, fecha_pago as fecha, 'Pago Turno #' || turno_id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
-            FROM pagos WHERE caja_id = $1
+            FROM pagos 
+            WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
             UNION ALL
             SELECT 'INSCRIPCION' as tipo_movimiento, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago
-            FROM inscripciones WHERE caja_id = $1
+            FROM inscripciones 
+            WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
             UNION ALL
             SELECT 'INGRESO_CUENTA' as tipo_movimiento, fecha, descripcion, monto, 'N/A' as metodo_pago
-            FROM movimientos_cuenta WHERE caja_id = $1 AND tipo = 'HABER'
+            FROM movimientos_cuenta 
+            WHERE tipo = 'HABER' AND fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             UNION ALL
             SELECT 'GASTO' as tipo_movimiento, fecha, descripcion, -monto as monto, 'Efectivo' as metodo_pago
-            FROM gastos WHERE caja_id = $1
+            FROM gastos 
+            WHERE fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             ORDER BY fecha DESC
         `;
-        const res = await pool.query(query, [cajaId]);
+        const res = await pool.query(query, [fecha_apertura, fecha_cierre]);
         return res.rows;
     }
 };

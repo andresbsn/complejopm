@@ -473,15 +473,180 @@ const ReportesPage = () => {
             )}
 
             {/* Data Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobile Cards View */}
+            <div className="md:hidden space-y-4">
+                {loading ? (
+                    <div className="text-center py-4 text-gray-500">Cargando datos...</div>
+                ) : (
+                    <>
+                        {/* Caja List Mobile */}
+                        {activeTab === 'caja' && !selectedCaja && (
+                            cajasHistory.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron registros.</div>
+                            ) : (
+                                cajasHistory.map((caja) => (
+                                    <div key={caja.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-bold text-gray-900">Caja #{caja.id}</span>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                caja.estado === 'abierta' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {caja.estado}
+                                            </span>
+                                        </div>
+                                        <div className="text-sm space-y-1 mb-3">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Apertura:</span>
+                                                <span className="text-gray-900">{new Date(caja.fecha_apertura).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Cierre:</span>
+                                                <span className="text-gray-900">{caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-'}</span>
+                                            </div>
+                                        </div>
+                                        {isAdmin && (
+                                            <div className="border-t pt-2 flex justify-between items-center text-sm mb-3">
+                                                <div>
+                                                    <span className="text-gray-500 block text-xs">Inicial</span>
+                                                    <span className="font-semibold">${formatCurrency(caja.saldo_inicial)}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-gray-500 block text-xs">Final</span>
+                                                    <span className="font-semibold">{caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <button 
+                                            onClick={() => handleSelectCaja(caja)} 
+                                            className="w-full bg-indigo-50 text-indigo-700 py-2 rounded-md text-sm font-medium hover:bg-indigo-100"
+                                        >
+                                            Ver Movimientos
+                                        </button>
+                                    </div>
+                                ))
+                            )
+                        )}
+
+                        {/* Caja Movements Mobile */}
+                        {activeTab === 'caja' && selectedCaja && (
+                            <div className="space-y-4">
+                                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg mb-4">
+                                    <h3 className="font-bold text-indigo-900">Caja #{selectedCaja.id}</h3>
+                                    <p className="text-xs text-indigo-700 mt-1">Apertura: {new Date(selectedCaja.fecha_apertura).toLocaleString()}</p>
+                                </div>
+                                {cajaMovimientos.length === 0 ? (
+                                    <div className="text-center py-4 text-gray-500">No hay movimientos.</div>
+                                ) : (
+                                    cajaMovimientos.map((mov, idx) => (
+                                        <div key={idx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    mov.tipo_movimiento === 'GASTO' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {mov.tipo_movimiento}
+                                                </span>
+                                                <span className="text-xs text-gray-500">{new Date(mov.fecha).toLocaleTimeString()}</span>
+                                            </div>
+                                            <p className="font-medium text-gray-900 mb-1">{mov.descripcion}</p>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-500 capitalize">{mov.metodo_pago}</span>
+                                                <span className={`font-bold ${parseFloat(mov.monto) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                    ${formatCurrency(mov.monto)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* Ventas Mobile */}
+                        {activeTab === 'ventas' && (
+                            reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron ventas.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                item.tipo === 'VENTA' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                            }`}>
+                                                {item.tipo}
+                                            </span>
+                                            <span className="text-xs text-gray-500">{new Date(item.fecha).toLocaleString()}</span>
+                                        </div>
+                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                                        {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
+                                        <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50">
+                                            <span className="text-gray-500 capitalize">{item.metodo || '-'}</span>
+                                            <span className="font-bold text-gray-900">${formatCurrency(item.monto)}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )
+                        )}
+
+                        {/* Jugadores Mobile */}
+                        {activeTab === 'jugadores' && (
+                             reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron jugadores.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mt-1">
+                                                    {item.categoria_descripcion || 'Sin Categoría'}
+                                                </span>
+                                            </div>
+                                            <span className={`font-bold text-sm ${parseFloat(item.saldo) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                ${parseFloat(item.saldo || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 space-y-1 mt-2">
+                                            {item.telefono && <p>📞 {item.telefono}</p>}
+                                            {item.email && <p>✉️ {item.email}</p>}
+                                        </div>
+                                    </div>
+                                ))
+                            )
+                        )}
+
+                        {/* Deudores Mobile */}
+                        {activeTab === 'deudores' && (
+                             reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron deudores.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 border-l-4 border-l-red-500">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
+                                                <p className="text-xs text-gray-500">{item.categoria_descripcion || '-'}</p>
+                                            </div>
+                                            <span className="font-bold text-red-600">
+                                                ${parseFloat(item.saldo || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        {item.telefono && <p className="text-xs text-gray-500 mt-1">📞 {item.telefono}</p>}
+                                    </div>
+                                ))
+                            )
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Desktop Data Table */}
+            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     {activeTab === 'caja' && selectedCaja && (
                         <div className="p-4 bg-gray-50 border-b flex justify-between items-center bg-indigo-50 border-indigo-100">
                              <div>
                                 <h3 className="font-bold text-indigo-900">Movimientos Caja #{selectedCaja.id}</h3>
                                 <p className="text-xs text-indigo-700 mt-1">
-                                    Apertura: {new Date(selectedCaja.fecha_apertura).toLocaleString()}
-                                </p>
+                                    Apertura: {new Date(selectedCaja.fecha_apertura).toLocaleString()}</p>
                             </div>
                         </div>
                     )}
