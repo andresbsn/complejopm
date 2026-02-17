@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { CajaService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
+import { useAuth } from '../context/AuthContext';
 
 const CajaPage = () => {
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
     const [caja, setCaja] = useState(null);
     const [movimientos, setMovimientos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -70,7 +73,7 @@ const CajaPage = () => {
             const saldoCalculado = calcularSaldoActual();
             // If user didn't input real balance, assume it matches or require it?
             // Let's require it or default to calculated.
-             const final = saldoFinalReal ? parseFloat(saldoFinalReal) : saldoCalculado;
+            const final = saldoFinalReal ? parseFloat(saldoFinalReal) : saldoCalculado;
             
             await CajaService.cerrar(caja.id, final);
             setSuccess('Caja cerrada correctamente');
@@ -185,9 +188,15 @@ const CajaPage = () => {
                                     
                                     // Filtrar métodos que tengan movimiento o saldo inicial > 0, o mostrar siempre los principales?
                                     // Mostraremos los principales siempre para consistencia visual
-                                    const methodsToShow = ['efectivo', 'qr', 'transferencia'];
-                                    // Si hay 'otros' con datos, lo agregamos
-                                    if (totales.otros.count > 0) methodsToShow.push('otros');
+                                    let methodsToShow = ['efectivo', 'qr', 'transferencia'];
+                                    
+                                    // Si no es admin, mostrar solo efectivo
+                                    if (!isAdmin) {
+                                        methodsToShow = ['efectivo'];
+                                    }
+
+                                    // Si hay 'otros' con datos, lo agregamos y es admin
+                                    if (totales.otros.count > 0 && isAdmin) methodsToShow.push('otros');
 
                                     return methodsToShow.map(key => {
                                         const t = totales[key];
