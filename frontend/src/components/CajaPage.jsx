@@ -102,7 +102,11 @@ const CajaPage = () => {
             // Wait, movements don't specify sign in my query?
             // Venta, Pago, Inscripcion are income.
             // Movimiento Cuenta: 'HABER' is income.
-            total += parseFloat(m.monto);
+            
+            // Exclude 'cuenta_corriente' from cash balance
+            if (m.metodo_pago !== 'cuenta_corriente') {
+                total += parseFloat(m.monto);
+            }
         });
         return total;
     };

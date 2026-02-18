@@ -11,32 +11,55 @@ const VentaModel = {
             const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
             const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
 
-            const { items, total, metodo_pago, jugador_id, observaciones, usuario_id } = ventaData;
+            const { items, total, usuario_id, observaciones } = ventaData;
+            let { pagos } = ventaData;
+
+            // Backward compatibility / Single payment handling
+            if (!pagos || pagos.length === 0) {
+                const { metodo_pago, jugador_id } = ventaData; // Legacy fields
+                pagos = [{
+                    metodo: metodo_pago,
+                    monto: total,
+                    jugador_id: jugador_id
+                }];
+            }
+
+            // Determine aggregate method name for the sale record
+            const metodo_pago_global = pagos.length > 1 ? 'multiple' : pagos[0].metodo;
 
             // 1. Insertar la venta
-            // Nota: Si método de pago es cuenta_corriente, registramos la venta igual.
             const ventaQuery = `
                 INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones)
                 VALUES ($1, $2, $3, $4)
                 RETURNING *
             `;
-            const ventaResult = await client.query(ventaQuery, [total, metodo_pago, cajaId, observaciones]);
+            const ventaResult = await client.query(ventaQuery, [total, metodo_pago_global, cajaId, observaciones]);
             const venta = ventaResult.rows[0];
 
-            // 1.5 Si es cuenta corriente, registrar movimiento en cuenta del jugador
-            if (metodo_pago === 'cuenta_corriente') {
-                if (!jugador_id) throw new Error('Se requiere jugador_id para cuenta corriente');
+            // 1.5 Procesar pagos
+            for (const pago of pagos) {
+                // Insertar en pagos_ventas
+                await client.query(`
+                    INSERT INTO pagos_ventas (venta_id, metodo, monto)
+                    VALUES ($1, $2, $3)
+                `, [venta.id, pago.metodo, pago.monto]);
 
-                const movimientoQuery = `
-                    INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id)
-                    VALUES ($1, 'DEBE', $2, $3, $4)
-                `;
-                await client.query(movimientoQuery, [
-                    jugador_id,
-                    total,
-                    `Compra en Cantina (Venta #${venta.id})`,
-                    venta.id
-                ]);
+                // Si es cuenta corriente, registrar movimiento en cuenta del jugador
+                if (pago.metodo === 'cuenta_corriente') {
+                    if (!pago.jugador_id) throw new Error('Se requiere jugador_id para pago con cuenta corriente');
+
+                    const movimientoQuery = `
+                        INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id)
+                        VALUES ($1, 'DEBE', $2, $3, $4, $5)
+                    `;
+                    await client.query(movimientoQuery, [
+                        pago.jugador_id,
+                        pago.monto,
+                        `Compra en Cantina (Venta #${venta.id})`,
+                        venta.id,
+                        cajaId
+                    ]);
+                }
             }
 
             let costoTotalVenta = 0;
@@ -80,8 +103,8 @@ const VentaModel = {
                 await client.query(updateStockQuery, [cantidad, producto_id]);
             }
 
-            // 3. Si es cortesía/gasto general, generar un gasto por el COSTO de los productos
-            if (metodo_pago === 'gastos_generales') {
+            // 3. Si es cortesía TOTAL (gastos_generales), generar un gasto por el COSTO de los productos
+            if (metodo_pago_global === 'gastos_generales') {
                 const gastoQuery = `
                     INSERT INTO gastos (descripcion, monto, caja_id, usuario_id)
                     VALUES ($1, $2, $3, $4)

@@ -62,9 +62,10 @@ const CajaModel = {
         // Esto corrige el problema de movimientos "huérfanos" o mal asignados,
         // asegurando que el reporte muestre todo lo que pasó mientras la caja estaba abierta.
         const query = `
-            SELECT 'VENTA' as tipo_movimiento, fecha, 'Venta Cantina #' || id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo_pago = 'gastos_generales' THEN 0 ELSE total END as monto, metodo_pago
-            FROM ventas_cantina 
-            WHERE fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
+            SELECT 'VENTA' as tipo_movimiento, v.fecha, 'Venta Cantina #' || v.id || COALESCE(' (' || v.observaciones || ')', '') as descripcion, CASE WHEN p.metodo = 'gastos_generales' THEN 0 ELSE p.monto END as monto, p.metodo as metodo_pago
+            FROM ventas_cantina v
+            JOIN pagos_ventas p ON v.id = p.venta_id
+            WHERE v.fecha >= $1 AND ($2::timestamp IS NULL OR v.fecha <= $2::timestamp)
             UNION ALL
             SELECT 'PAGO_TURNO' as tipo_movimiento, fecha_pago as fecha, 'Pago Turno #' || turno_id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
             FROM pagos 

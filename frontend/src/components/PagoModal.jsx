@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import api, { TurnoService } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import api, { TurnoService, JugadorService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
+import SearchableSelect from './SearchableSelect';
 
 const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     const saldoPendiente = parseFloat(turno.monto_total) - parseFloat(turno.monto_pagado || 0);
@@ -9,9 +10,32 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     const [observaciones, setObservaciones] = useState('');
     const [loading, setLoading] = useState(false);
     const [showCancelOptions, setShowCancelOptions] = useState(false);
+    const [jugadores, setJugadores] = useState([]);
+    const [selectedJugadorId, setSelectedJugadorId] = useState(null);
+
+    useEffect(() => {
+        const fetchJugadores = async () => {
+            try {
+                const data = await JugadorService.getAll();
+                // Map data to format expected by SearchableSelect if needed, 
+                // but SearchableSelect expects objects and uses labelKey/valueKey. 
+                // Player objects have 'nombre' and 'id', so it works directly.
+                setJugadores(data);
+            } catch (error) {
+                console.error("Error al cargar jugadores", error);
+            }
+        };
+        fetchJugadores();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (metodo === 'cuenta_corriente' && !selectedJugadorId) {
+            alert('Debe seleccionar un jugador para cargar a cuenta corriente.');
+            return;
+        }
+
         setLoading(true);
         try {
             let turnoId = turno.id;
@@ -34,7 +58,8 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
             await api.post(`/turnos/${turnoId}/pagos`, { 
                 monto, 
                 metodo,
-                observaciones: metodo === 'gastos_generales' ? observaciones : null
+                observaciones: metodo === 'gastos_generales' ? observaciones : null,
+                jugador_id: metodo === 'cuenta_corriente' ? selectedJugadorId : null
             });
             onPagoSuccess();
             onClose();
@@ -157,9 +182,26 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 <option value="efectivo">Efectivo</option>
                                 <option value="transferencia">Transferencia</option>
                                 <option value="qr">QR</option>
+                                <option value="cuenta_corriente">Cuenta Corriente</option>
                                 <option value="gastos_generales">Gastos Generales / Cortesía</option>
                             </select>
                         </div>
+
+                        {metodo === 'cuenta_corriente' && (
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Seleccionar Jugador</label>
+                                <SearchableSelect
+                                    options={jugadores}
+                                    value={selectedJugadorId}
+                                    onChange={(option) => setSelectedJugadorId(option.id)}
+                                    labelKey="nombre"
+                                    valueKey="id"
+                                    placeholder="Buscar jugador..."
+                                />
+                                <p className="text-xs text-gray-500 mt-1">El monto se cargará como deuda a este jugador.</p>
+                            </div>
+                        )}
+
                         {metodo === 'gastos_generales' && (
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2">Motivo / Observación</label>

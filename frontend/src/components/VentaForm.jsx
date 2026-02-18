@@ -9,9 +9,14 @@ const VentaForm = ({ onVentaCreated }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
     const [mensaje, setMensaje] = useState(null);
-    const [metodoPago, setMetodoPago] = useState('efectivo');
+    const [pagos, setPagos] = useState([{ metodo: 'efectivo', monto: 0 }]);
+    const [pagosValid, setPagosValid] = useState(true);
+
+    const calcularTotal = () => {
+        return carrito.reduce((total, item) => total + (item.precio_unitario * item.cantidad), 0);
+    };
+
     const [jugadores, setJugadores] = useState([]);
-    const [selectedJugador, setSelectedJugador] = useState(null);
     const [observaciones, setObservaciones] = useState('');
 
     useEffect(() => {
@@ -30,7 +35,6 @@ const VentaForm = ({ onVentaCreated }) => {
 
     const cargarProductos = async () => {
         try {
-            // Only load active products for sales
             const data = await ProductoService.getAll({ estado: 'ACTIVO' });
             setProductos(data);
         } catch (error) {
@@ -85,44 +89,98 @@ const VentaForm = ({ onVentaCreated }) => {
         setCarrito(carrito.filter(item => item.producto_id !== productoId));
     };
 
-    const calcularTotal = () => {
-        return carrito.reduce((total, item) => total + (item.precio_unitario * item.cantidad), 0);
+
+
+
+
+    // Update initial payment when cart changes if only one payment exists (and it's active)
+    useEffect(() => {
+        const total = calcularTotal();
+        if (pagos.length === 1 && pagos[0].metodo && !pagos[0].manualUpdate) {
+             setPagos([{ ...pagos[0], monto: total }]);
+        }
+    }, [carrito]);
+
+    const handlePagoChange = (index, field, value) => {
+        const newPagos = [...pagos];
+        newPagos[index] = { ...newPagos[index], [field]: value, manualUpdate: true };
+        
+        // If changing method to something that requires helper data, reset it
+        if (field === 'metodo') {
+             if (value !== 'cuenta_corriente') {
+                 delete newPagos[index].jugador;
+             }
+        }
+        setPagos(newPagos);
+    };
+    
+    const agregarPago = () => {
+        const total = calcularTotal();
+        const currentSum = pagos.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
+        const remaining = total - currentSum;
+        if (remaining > 0) {
+            setPagos([...pagos, { metodo: 'efectivo', monto: remaining }]);
+        }
+    };
+
+    const eliminarPago = (index) => {
+        if (pagos.length === 1) return;
+        const newPagos = pagos.filter((_, i) => i !== index);
+        setPagos(newPagos);
     };
 
     const finalizarVenta = async () => {
         if (carrito.length === 0) return;
 
+        const total = calcularTotal();
+        const sumaPagos = pagos.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
+        
+        // Allow small floating point diffs
+        if (Math.abs(sumaPagos - total) > 0.01) {
+            alert(`El total de pagos ($${sumaPagos}) no coincide con el total de la venta ($${total})`);
+            return;
+        }
+
+        // Validate account details
+        for (const p of pagos) {
+            if (p.metodo === 'cuenta_corriente' && !p.jugador) {
+                 alert('Debe seleccionar un jugador para los pagos con Cuenta Corriente');
+                 return;
+            }
+        }
+
         setLoading(true);
         try {
-            if (metodoPago === 'cuenta_corriente' && !selectedJugador) {
-                alert('Debe seleccionar un jugador para cargar a la cuenta corriente');
-                setLoading(false);
-                return;
-            }
-
             const ventaData = {
                 items: carrito,
-                total: calcularTotal(),
-                metodo_pago: metodoPago,
-                jugador_id: metodoPago === 'cuenta_corriente' ? selectedJugador.id : null,
-                observaciones: metodoPago === 'gastos_generales' ? observaciones : null
+                total: total,
+                observaciones: observaciones,
+                pagos: pagos.map(p => ({
+                    metodo: p.metodo,
+                    monto: parseFloat(p.monto),
+                    jugador_id: p.jugador ? p.jugador.id : null
+                }))
             };
+            
             await VentaService.create(ventaData);
             setMensaje({ type: 'success', text: 'Venta realizada con éxito' });
             setCarrito([]);
-            setMetodoPago('efectivo');
+            setPagos([{ metodo: 'efectivo', monto: 0 }]); // Reset
             setObservaciones('');
-            setSelectedJugador(null);
             cargarProductos(); // Recargar para actualizar stock
             if (onVentaCreated) onVentaCreated();
             setTimeout(() => setMensaje(null), 3000);
         } catch (error) {
             console.error('Error al realizar venta:', error);
-            setMensaje({ type: 'error', text: 'Error al realizar la venta' });
+            setMensaje({ type: 'error', text: 'Error al realizar la venta: ' + (error.response?.data?.error || error.message) });
         } finally {
             setLoading(false);
         }
     };
+
+    const currentTotal = calcularTotal();
+    const pagosTotal = pagos.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
+    const restante = currentTotal - pagosTotal;
 
     const filteredProductos = productos.filter(p => 
         p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) && p.stock > 0
@@ -233,58 +291,81 @@ const VentaForm = ({ onVentaCreated }) => {
                         </div>
                     )}
                     
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
-                        <select
-                            value={metodoPago}
-                            onChange={(e) => setMetodoPago(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        >
-                            <option value="efectivo">Efectivo</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="qr">QR</option>
-                            <option value="cuenta_corriente">Cuenta Corriente</option>
-                            <option value="gastos_generales">Gastos Generales / Cortesía</option>
-                        </select>
+                    <div className="mb-4 space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">Pagos</label>
+                        {pagos.map((pago, index) => (
+                            <div key={index} className="p-3 bg-white rounded border border-gray-200 space-y-2">
+                                <div className="flex gap-2">
+                                     <select
+                                        value={pago.metodo}
+                                        onChange={(e) => handlePagoChange(index, 'metodo', e.target.value)}
+                                        className="w-1/2 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-indigo-500"
+                                    >
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="transferencia">Transferencia</option>
+                                        <option value="qr">QR</option>
+                                        <option value="cuenta_corriente">Cuenta Corriente</option>
+                                        <option value="gastos_generales">Gastos / Cortesía</option>
+                                    </select>
+                                    <input 
+                                        type="number" 
+                                        value={pago.monto} 
+                                        onChange={(e) => handlePagoChange(index, 'monto', e.target.value)}
+                                        className="w-1/2 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-indigo-500"
+                                    />
+                                    {pagos.length > 1 && (
+                                        <button onClick={() => eliminarPago(index)} className="text-red-500 hover:text-red-700">✕</button>
+                                    )}
+                                </div>
+                                {pago.metodo === 'cuenta_corriente' && (
+                                    <div className="text-sm">
+                                         <SearchableSelect
+                                            options={jugadores}
+                                            value={pago.jugador ? pago.jugador.id : ''}
+                                            onChange={(option) => handlePagoChange(index, 'jugador', option)}
+                                            labelKey="nombre"
+                                            valueKey="id"
+                                            placeholder="Seleccionar Jugador..."
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        
+                        <div className="flex justify-between items-center text-sm pt-1">
+                            {restante > 0.01 ? (
+                                <button onClick={agregarPago} className="text-indigo-600 font-medium hover:text-indigo-800">
+                                    + Agregar otro método (${formatCurrency(restante)})
+                                </button>
+                            ) : (
+                                <span className="text-green-600 font-medium flex items-center">
+                                    ✓ Pago cubierto
+                                </span>
+                            )}
+                            {restante < -0.01 && (
+                                <span className="text-red-500 font-medium">Exceso: ${formatCurrency(Math.abs(restante))}</span>
+                            )}
+                        </div>
                     </div>
 
-                    {metodoPago === 'cuenta_corriente' && (
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente / Jugador</label>
-                            <SearchableSelect
-                                options={jugadores}
-                                value={selectedJugador ? selectedJugador.id : ''}
-                                onChange={(option) => setSelectedJugador(option)}
-                                labelKey="nombre"
-                                valueKey="id"
-                                placeholder="Buscar Jugador..."
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                Se registrará una deuda en la cuenta del jugador seleccionado.
-                            </p>
-                        </div>
-                    )}
-
-                    {metodoPago === 'gastos_generales' && (
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Motivo / Observación (Opcional)</label>
+                    <div className="mb-4">
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
                             <textarea
                                 value={observaciones}
                                 onChange={(e) => setObservaciones(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                 rows="2"
-                                placeholder="Ej: Invitación especial, canje, etc."
+                                placeholder="..."
                             />
-                        </div>
-                    )}
+                    </div>
 
                     <div className="flex justify-between items-center mb-4">
                         <span className="text-gray-600">Total a Pagar</span>
-                        <span className="text-2xl font-bold text-gray-900">${formatCurrency(calcularTotal())}</span>
+                        <span className="text-2xl font-bold text-gray-900">${formatCurrency(currentTotal)}</span>
                     </div>
                     <button 
                         onClick={finalizarVenta}
-                        disabled={carrito.length === 0 || loading}
+                        disabled={carrito.length === 0 || loading || Math.abs(restante) > 0.01}
                         className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         {loading ? 'Procesando...' : 'Cobrar'}
