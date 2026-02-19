@@ -3,11 +3,26 @@ const pool = require('../config/db');
 const reporteController = {
     getVentasReport: async (req, res) => {
         try {
-            const { fechaDesde, fechaHasta, tipo, metodoPago } = req.query;
+            const { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta } = req.query;
 
             let finalQuery = `
                 SELECT * FROM (
-                    SELECT id, fecha, 'VENTA' as tipo, 'Venta Cantina #' || id as descripcion, metodo_pago as metodo, total as monto, observaciones FROM ventas_cantina
+                    SELECT 
+                        v.id, 
+                        v.fecha, 
+                        'VENTA' as tipo, 
+                        'Venta Cantina #' || v.id as descripcion, 
+                        v.metodo_pago as metodo, 
+                        v.total as monto, 
+                        (CASE WHEN v.metodo_pago = 'gastos_generales' THEN 0 ELSE v.total END - 
+                            COALESCE((SELECT SUM(d.cantidad * p.costo) 
+                                      FROM detalle_venta_cantina d 
+                                      JOIN productos p ON d.producto_id = p.id 
+                                      WHERE d.venta_id = v.id), 0)
+                        ) as ganancia,
+                        v.observaciones,
+                        'cantina' as categoria_venta
+                    FROM ventas_cantina v
                     UNION ALL
                     SELECT 
                         p.id, 
@@ -16,7 +31,9 @@ const reporteController = {
                         'Pago Turno ' || CASE WHEN c.tipo = 'PADEL' THEN 'Padel' ELSE 'Fútbol' END || ' ' || c.nombre as descripcion, 
                         p.metodo, 
                         p.monto,
-                        p.observaciones
+                        0 as ganancia,
+                        p.observaciones,
+                        LOWER(c.tipo) as categoria_venta
                     FROM pagos p
                     JOIN turnos t ON p.turno_id = t.id
                     JOIN canchas c ON t.cancha_id = c.id
@@ -28,7 +45,9 @@ const reporteController = {
                         'Inscripción Torneo: ' || t.descripcion || ' - ' || j.nombre as descripcion,
                         i.metodo_pago as metodo,
                         i.monto_abonado as monto,
-                        NULL as observaciones
+                        0 as ganancia,
+                        NULL as observaciones,
+                        'torneo' as categoria_venta
                     FROM inscripciones i
                     JOIN torneos t ON i.torneo_id = t.id
                     JOIN jugadores j ON i.jugador_id = j.id
@@ -58,6 +77,11 @@ const reporteController = {
             if (metodoPago) {
                 finalQuery += ` AND metodo = $${paramCounter}`;
                 finalParams.push(metodoPago);
+                paramCounter++;
+            }
+            if (categoriaVenta) {
+                finalQuery += ` AND categoria_venta = $${paramCounter}`;
+                finalParams.push(categoriaVenta);
                 paramCounter++;
             }
 

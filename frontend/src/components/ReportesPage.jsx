@@ -13,9 +13,18 @@ const ReportesPage = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState([]);
     // Filters for Ventas
-    const [fechaDesde, setFechaDesde] = useState('');
-    const [fechaHasta, setFechaHasta] = useState('');
+    const getToday = () => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const [fechaDesde, setFechaDesde] = useState(getToday());
+    const [fechaHasta, setFechaHasta] = useState(getToday());
     const [tipo, setTipo] = useState('');
+    const [categoriaVenta, setCategoriaVenta] = useState(''); // 'futbol', 'padel', 'cantina'
     const [metodoPago, setMetodoPago] = useState('');
 
     // Filters for Jugadores
@@ -68,7 +77,7 @@ const ReportesPage = () => {
         try {
             let data = [];
             if (activeTab === 'ventas' && isAdmin) {
-                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago };
+                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta };
                 data = await ReporteService.getVentas(filters);
                 calculateStats(data);
                 setReportData(data);
@@ -105,35 +114,47 @@ const ReportesPage = () => {
         }
     };
 
-    const calculateStats = (data, contextCaja = selectedCaja) => {
-        if (activeTab === 'ventas') {
-            let total = 0;
-            let byMethod = {};
+    const calculateStats = (data, context = null) => { // context can be 'caja' object or null
+        if (!data) return;
+
+        // Special handling for Caja view
+        if (activeTab === 'caja' && context) {
+
+             let total = 0;
+            const byMethod = {};
+
             data.forEach(item => {
                 const monto = parseFloat(item.monto);
-                const method = item.metodo || 'Otros';
-                // Solo sumar al total de ingresos si NO es gastos generales (cortesía)
-                if (method !== 'gastos_generales') {
-                    total += monto;
-                }
+                total += monto;
+                const method = item.metodo_pago || 'Otros';
                 if (!byMethod[method]) byMethod[method] = 0;
                 byMethod[method] += monto;
             });
-            setStats({ total, byMethod });
-        } else if (activeTab === 'caja' && contextCaja) { 
-            // Calculate balance for selected Caja
-            let totalBalance = 0;
-            let byMethod = {};
-            data.forEach(mov => {
-                const monto = parseFloat(mov.monto);
-                totalBalance += monto;
-
-                const method = mov.metodo_pago || 'Otros';
-                if (!byMethod[method]) byMethod[method] = 0;
-                byMethod[method] += monto;
-            });
-            setStats({ total: totalBalance, byMethod });
+            
+             setStats({ total, totalGanancia: 0, byMethod });
+             return;
         }
+
+        // For Venta/Jugadores/Deudores
+        let total = 0;
+        let totalGanancia = 0;
+        const byMethod = {};
+
+        data.forEach(item => {
+            const monto = parseFloat(item.monto || item.saldo || 0); // Handle 'saldo' for deudores
+            const ganancia = parseFloat(item.ganancia || 0);
+            
+            // For Ventas tab, only sum Ganancia if positive/present? 
+            // Query returns 0 for non-sale items.
+            totalGanancia += ganancia;
+
+            total += monto;
+            const method = item.metodo || 'Otros';
+            if (!byMethod[method]) byMethod[method] = 0;
+            byMethod[method] += monto;
+        });
+
+        setStats({ total, totalGanancia, byMethod });
     };
 
     const handleFilterSubmit = (e) => {
@@ -145,9 +166,11 @@ const ReportesPage = () => {
         if (activeTab === 'ventas') {
             setFechaDesde('');
             setFechaHasta('');
+            setFechaHasta('');
             setTipo('');
+            setCategoriaVenta('');
             setMetodoPago('');
-            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', metodoPago: '' });
+            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', categoriaVenta: '', metodoPago: '' });
         } else if (activeTab === 'jugadores') {
             setJugadorSearch('');
             setJugadorCategoria('');
@@ -195,15 +218,25 @@ const ReportesPage = () => {
 
         if (activeTab === 'ventas') {
             doc.text(`Total Ingresos: $${formatCurrency(stats.total)}`, 14, 36);
+            if (isAdmin) {
+                doc.text(`Ganancia Estimada: $${formatCurrency(stats.totalGanancia)}`, 100, 36);
+            }
+            
             const tableColumn = ["Fecha", "Descripción", "Obs.", "Tipo", "Método", "Monto"];
-            const tableRows = reportData.map(item => [
-                new Date(item.fecha).toLocaleString(),
-                item.descripcion,
-                item.observaciones || '-',
-                item.tipo,
-                item.metodo || '-',
-                `$${formatCurrency(item.monto)}`
-            ]);
+            if (isAdmin) tableColumn.push("Ganancia");
+
+            const tableRows = reportData.map(item => {
+                const row = [
+                    new Date(item.fecha).toLocaleString(),
+                    item.descripcion,
+                    item.observaciones || '-',
+                    item.tipo,
+                    item.metodo || '-',
+                    `$${formatCurrency(item.monto)}`
+                ];
+                if (isAdmin) row.push(item.tipo === 'VENTA' ? `$${formatCurrency(item.ganancia)}` : '-');
+                return row;
+            });
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
         } else if (activeTab === 'jugadores') {
             doc.text(`Total Jugadores: ${reportData.length}`, 14, 36);
@@ -240,26 +273,32 @@ const ReportesPage = () => {
                 autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos + 6 });
              } else {
                  const tableColumn = isAdmin 
-                    ? ["ID", "Apertura", "Cierre", "Saldo Inicial", "Saldo Final"]
-                    : ["ID", "Apertura", "Cierre"];
+                    ? ["ID", "Apertura", "Cierre", "Inicial", "Final", "Usuario", "Estado"]
+                    : ["ID", "Apertura", "Cierre", "Estado"];
                  
                  const tableRows = cajasHistory.map(caja => {
-                     const row = [
+                     const common = [
                         caja.id,
                         new Date(caja.fecha_apertura).toLocaleString(),
-                        caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'Abierta'
+                        caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-',
                      ];
                      if (isAdmin) {
-                         row.push(`$${formatCurrency(caja.saldo_inicial)}`);
-                         row.push(caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-');
+                         return [
+                             ...common,
+                             `$${formatCurrency(caja.saldo_inicial)}`,
+                             caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-',
+                             `ID: ${caja.usuario_apertura_id}`,
+                             caja.estado
+                         ];
+                     } else {
+                         return [...common, caja.estado];
                      }
-                     return row;
                  });
                  autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
              }
         }
 
-        doc.save(`${activeTab}_report_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`reporte_${activeTab}_${new Date().toISOString().slice(0,10)}.pdf`);
     };
 
     // Updated tabs list
@@ -327,6 +366,18 @@ const ReportesPage = () => {
                                 <option value="">Todos</option>
                                 <option value="VENTA">Venta Cantina</option>
                                 <option value="RESERVA">Reserva Cancha</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
+                            <select 
+                                value={categoriaVenta} onChange={(e) => setCategoriaVenta(e.target.value)}
+                                className="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            >
+                                <option value="">Todas</option>
+                                <option value="futbol">Fútbol</option>
+                                <option value="padel">Padel</option>
+                                <option value="cantina">Cantina</option>
                             </select>
                         </div>
                         <div>
@@ -436,49 +487,128 @@ const ReportesPage = () => {
             
             {/* Stats Cards */}
             {(activeTab !== 'caja' || selectedCaja) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
-                        <p className="text-sm font-medium text-gray-500">
-                            {activeTab === 'ventas' ? 'Ingresos Totales' : 
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <p className="text-sm text-gray-500">
+                            {activeTab === 'ventas' ? 'Total Ingresos' : 
                              activeTab === 'jugadores' ? 'Total Jugadores' : 
                              activeTab === 'caja' ? (isAdmin ? 'Balance Caja' : 'Total Efectivo') : 'Deuda Total'}
                         </p>
-                        <p className={`text-3xl font-bold mt-2 ${activeTab === 'caja' ? (stats.total >= 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-900'}`}>
+                        <p className={`text-2xl font-bold mt-1 ${activeTab === 'caja' ? (stats.total >= 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-800'}`}>
                             {activeTab === 'jugadores' ? stats.total : `$${formatCurrency(stats.total)}`}
                         </p>
-                        
-                        {activeTab === 'caja' && selectedCaja && (
-                             <div className="mt-4 pt-3 border-t border-gray-100">
-                                 <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Detalle por medio de pago</p>
-                                 <div className="space-y-1">
-                                     {Object.entries(stats.byMethod).map(([method, amount]) => (
-                                         <div key={method} className="flex justify-between items-center text-sm">
-                                             <span className="text-gray-600 capitalize">{method}</span>
-                                             <span className={`font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                 ${formatCurrency(amount)}
-                                             </span>
-                                         </div>
-                                     ))}
-                                 </div>
-                             </div>
+                        {activeTab === 'ventas' && (
+                             <p className="text-xs text-gray-400 mt-1">Ingresos brutos</p>
                         )}
                     </div>
-                    {activeTab === 'ventas' && Object.entries(stats.byMethod).map(([method, amount]) => (
-                        <div key={method} className="bg-white p-6 rounded-lg shadow-sm border-gray-200 border">
-                            <p className="text-sm font-medium text-gray-500 capitalize">{method}</p>
-                            <p className="text-2xl font-semibold text-gray-700 mt-2">${formatCurrency(amount)}</p>
+                    
+                    {activeTab === 'ventas' && isAdmin && (
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-sm text-gray-500">Ganancia Neta Est.</p>
+                            <p className="text-2xl font-bold text-green-600 mt-1">${formatCurrency(stats.totalGanancia)}</p>
+                            <p className="text-xs text-gray-400 mt-1">Ventas - Costos (Excluye Turnos)</p>
+                        </div>
+                    )}
+
+                    {Object.entries(stats.byMethod).map(([method, amount]) => (
+                        <div key={method} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-sm text-gray-500 capitalize">{method}</p>
+                            <p className="text-lg font-semibold text-gray-800">${formatCurrency(amount)}</p>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Data Table */}
             {/* Mobile Cards View */}
             <div className="md:hidden space-y-4">
                 {loading ? (
                     <div className="text-center py-4 text-gray-500">Cargando datos...</div>
                 ) : (
                     <>
+                        {/* Ventas Mobile */}
+                        {activeTab === 'ventas' && (
+                            reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron ventas.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                item.tipo === 'VENTA' ? 'bg-blue-100 text-blue-800' : 
+                                                item.tipo === 'RESERVA' ? 'bg-green-100 text-green-800' :
+                                                'bg-purple-100 text-purple-800'
+                                            }`}>
+                                                {item.tipo}
+                                            </span>
+                                            <span className="text-xs text-gray-500">{new Date(item.fecha).toLocaleString()}</span>
+                                        </div>
+                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                                        {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
+                                        <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50">
+                                            <span className="text-gray-500 capitalize">{item.metodo || '-'}</span>
+                                            <div>
+                                                <span className="font-bold text-gray-900">${formatCurrency(item.monto)}</span>
+                                                {isAdmin && item.tipo === 'VENTA' && (
+                                                    <span className={`block text-xs text-right ${parseFloat(item.ganancia) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                        G: ${formatCurrency(item.ganancia)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )
+                        )}
+
+                        {/* Jugadores Mobile */}
+                        {activeTab === 'jugadores' && (
+                             reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron jugadores.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mt-1">
+                                                    {item.categoria_descripcion || 'Sin Categoría'}
+                                                </span>
+                                            </div>
+                                            <span className={`font-bold text-sm ${parseFloat(item.saldo) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                ${parseFloat(item.saldo || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 space-y-1 mt-2">
+                                            {item.telefono && <p>📞 {item.telefono}</p>}
+                                            {item.email && <p>✉️ {item.email}</p>}
+                                        </div>
+                                    </div>
+                                ))
+                            )
+                        )}
+
+                        {/* Deudores Mobile */}
+                        {activeTab === 'deudores' && (
+                             reportData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">No se encontraron deudores.</div>
+                            ) : (
+                                reportData.map((item, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 border-l-4 border-l-red-500">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
+                                                <p className="text-xs text-gray-500">{item.categoria_descripcion || '-'}</p>
+                                            </div>
+                                            <span className="font-bold text-red-600">
+                                                ${parseFloat(item.saldo || 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        {item.telefono && <p className="text-xs text-gray-500 mt-1">📞 {item.telefono}</p>}
+                                    </div>
+                                ))
+                            )
+                        )}
+
                         {/* Caja List Mobile */}
                         {activeTab === 'caja' && !selectedCaja && (
                             cajasHistory.length === 0 ? (
@@ -559,87 +689,12 @@ const ReportesPage = () => {
                                 )}
                             </div>
                         )}
-
-                        {/* Ventas Mobile */}
-                        {activeTab === 'ventas' && (
-                            reportData.length === 0 ? (
-                                <div className="text-center py-4 text-gray-500">No se encontraron ventas.</div>
-                            ) : (
-                                reportData.map((item, index) => (
-                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                item.tipo === 'VENTA' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                            }`}>
-                                                {item.tipo}
-                                            </span>
-                                            <span className="text-xs text-gray-500">{new Date(item.fecha).toLocaleString()}</span>
-                                        </div>
-                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
-                                        {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
-                                        <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50">
-                                            <span className="text-gray-500 capitalize">{item.metodo || '-'}</span>
-                                            <span className="font-bold text-gray-900">${formatCurrency(item.monto)}</span>
-                                        </div>
-                                    </div>
-                                ))
-                            )
-                        )}
-
-                        {/* Jugadores Mobile */}
-                        {activeTab === 'jugadores' && (
-                             reportData.length === 0 ? (
-                                <div className="text-center py-4 text-gray-500">No se encontraron jugadores.</div>
-                            ) : (
-                                reportData.map((item, index) => (
-                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mt-1">
-                                                    {item.categoria_descripcion || 'Sin Categoría'}
-                                                </span>
-                                            </div>
-                                            <span className={`font-bold text-sm ${parseFloat(item.saldo) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                                ${parseFloat(item.saldo || 0).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="text-xs text-gray-500 space-y-1 mt-2">
-                                            {item.telefono && <p>📞 {item.telefono}</p>}
-                                            {item.email && <p>✉️ {item.email}</p>}
-                                        </div>
-                                    </div>
-                                ))
-                            )
-                        )}
-
-                        {/* Deudores Mobile */}
-                        {activeTab === 'deudores' && (
-                             reportData.length === 0 ? (
-                                <div className="text-center py-4 text-gray-500">No se encontraron deudores.</div>
-                            ) : (
-                                reportData.map((item, index) => (
-                                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 border-l-4 border-l-red-500">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="font-semibold text-gray-900">{item.nombre}</h3>
-                                                <p className="text-xs text-gray-500">{item.categoria_descripcion || '-'}</p>
-                                            </div>
-                                            <span className="font-bold text-red-600">
-                                                ${parseFloat(item.saldo || 0).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        {item.telefono && <p className="text-xs text-gray-500 mt-1">📞 {item.telefono}</p>}
-                                    </div>
-                                ))
-                            )
-                        )}
                     </>
                 )}
             </div>
 
             {/* Desktop Data Table */}
-            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     {activeTab === 'caja' && selectedCaja && (
                         <div className="p-4 bg-gray-50 border-b flex justify-between items-center bg-indigo-50 border-indigo-100">
@@ -653,182 +708,128 @@ const ReportesPage = () => {
 
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
-                            <tr>
-                                {activeTab === 'ventas' && (
-                                    <>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Obs.</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                                    </>
-                                )}
-                                {activeTab === 'jugadores' && (
-                                    <>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Teléfono</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Email</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo</th>
-                                    </>
-                                )}
-                                {activeTab === 'deudores' && (
-                                    <>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Categoría</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Teléfono</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deuda</th>
-                                    </>
-                                )}
-                                {activeTab === 'caja' && !selectedCaja && (
-                                    <>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apertura</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cierre</th>
-                                        {isAdmin && (
-                                            <>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Inicial</th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Final</th>
-                                            </>
-                                        )}
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                                    </>
-                                )}
-                                {activeTab === 'caja' && selectedCaja && (
-                                    <>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Fecha</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Tipo</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                                    </>
-                                )}
-                            </tr>
+                            {activeTab === 'ventas' && (
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Obs.</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                    {isAdmin && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ganancia</th>}
+                                </tr>
+                            )}
+                            {activeTab === 'jugadores' && (
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo</th>
+                                </tr>
+                            )}
+                            {activeTab === 'deudores' && (
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deuda Total</th>
+                                </tr>
+                            )}
+                            {activeTab === 'caja' && selectedCaja && (
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                </tr>
+                            )}
+                            {activeTab === 'caja' && !selectedCaja && (
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apertura</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cierre</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            )}
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {loading ? (
-                                <tr><td colSpan="6" className="text-center py-8">Cargando datos...</td></tr>
-                            ) : (activeTab === 'caja' && !selectedCaja && cajasHistory.length === 0) || 
-                                (activeTab === 'caja' && selectedCaja && cajaMovimientos.length === 0) ||
-                                (activeTab !== 'caja' && reportData.length === 0) ? (
-                                <tr><td colSpan="6" className="text-center py-8 text-gray-500">No se encontraron registros.</td></tr>
-                            ) : (
-                                <>
-                                    {activeTab === 'caja' && !selectedCaja && cajasHistory.map((caja) => (
-                                        <tr key={caja.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{caja.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(caja.fecha_apertura).toLocaleString()}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : <span className="text-green-600 font-semibold">Abierta</span>}
-                                            </td>
-                                            {isAdmin && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${formatCurrency(caja.saldo_inicial)}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium">
-                                                        {caja.saldo_final ? `$${formatCurrency(caja.saldo_final)}` : '-'}
-                                                    </td>
-                                                </>
-                                            )}
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button onClick={() => handleSelectCaja(caja)} className="text-indigo-600 hover:text-indigo-900">
-                                                    Ver Movimientos
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-
-                                    {activeTab === 'caja' && selectedCaja && cajaMovimientos.map((mov, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{new Date(mov.fecha).toLocaleString()}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm hidden md:table-cell">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    mov.tipo_movimiento === 'GASTO' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                }`}>
-                                                    {mov.tipo_movimiento}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mov.descripcion}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{mov.metodo_pago}</td>
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                                                parseFloat(mov.monto) < 0 ? 'text-red-600' : 'text-green-600'
-                                            }`}>
-                                                ${formatCurrency(mov.monto)}
-                                            </td>
-                                        </tr>
-                                    ))}
-
-                                    {activeTab !== 'caja' && reportData.map((item, index) => (
-                                        <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                            {activeTab === 'ventas' && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {new Date(item.fecha).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {item.descripcion}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
-                                                        {item.observaciones || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            item.tipo === 'VENTA' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                                        }`}>
-                                                            {item.tipo}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                                                        {item.metodo || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                                        ${formatCurrency(item.monto)}
-                                                    </td>
-                                                </>
-                                            )}
-                                            {activeTab === 'jugadores' && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                            {item.categoria_descripcion || 'Sin Categoría'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {item.nombre}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {item.telefono || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {item.email || '-'}
-                                                    </td>
-                                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                                                        parseFloat(item.saldo) > 0 ? 'text-red-600' : 'text-green-600'
-                                                    }`}>
-                                                        ${parseFloat(item.saldo || 0).toFixed(2)}
-                                                    </td>
-                                                </>
-                                            )}
-                                            {activeTab === 'deudores' && (
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {item.nombre}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
-                                                        {item.categoria_descripcion || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
-                                                        {item.telefono || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right font-semibold">
-                                                        ${parseFloat(item.saldo || 0).toFixed(2)}
-                                                    </td>
-                                                </>
-                                            )}
-                                        </tr>
-                                    ))}
-                                </>
-                            )}
+                            {activeTab === 'ventas' && reportData.map(item => (
+                                <tr key={`${item.tipo}-${item.id}`} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {new Date(item.fecha).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {item.descripcion}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
+                                        {item.observaciones || '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                            item.tipo === 'VENTA' ? 'bg-green-100 text-green-800' : 
+                                            item.tipo === 'RESERVA' ? 'bg-blue-100 text-blue-800' : 
+                                            'bg-purple-100 text-purple-800'
+                                        }`}>
+                                            {item.tipo}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                                        {item.metodo}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                        ${formatCurrency(item.monto)}
+                                    </td>
+                                    {isAdmin && (
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${parseFloat(item.ganancia) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                            {item.tipo === 'VENTA' ? `$${formatCurrency(item.ganancia)}` : '-'}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                            {activeTab === 'jugadores' && reportData.map(item => (
+                                <tr key={item.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.nombre}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.categoria_descripcion || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.telefono || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.email || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">${formatCurrency(item.saldo)}</td>
+                                </tr>
+                            ))}
+                             {activeTab === 'deudores' && reportData.map(item => (
+                                <tr key={item.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.nombre}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{item.categoria_descripcion || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{item.telefono || '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600">${formatCurrency(item.saldo)}</td>
+                                </tr>
+                            ))}
+                            {activeTab === 'caja' && selectedCaja && cajaMovimientos.map((mov, idx) => (
+                                <tr key={idx}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(mov.fecha).toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mov.tipo_movimiento}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mov.descripcion}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{mov.metodo_pago}</td>
+                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${mov.monto < 0 ? 'text-red-600' : 'text-green-600'}`}>${formatCurrency(mov.monto)}</td>
+                                </tr>
+                            ))}
+                             {activeTab === 'caja' && !selectedCaja && cajasHistory.map(caja => (
+                                <tr key={caja.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleSelectCaja(caja)}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{caja.id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(caja.fecha_apertura).toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caja.estado === 'abierta' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                            {caja.estado}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button onClick={(e) => { e.stopPropagation(); handleSelectCaja(caja); }} className="text-indigo-600 hover:text-indigo-900">Ver Movimientos</button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -836,5 +837,6 @@ const ReportesPage = () => {
         </div>
     );
 };
+
 
 export default ReportesPage;

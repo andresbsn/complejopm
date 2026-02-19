@@ -19,6 +19,7 @@ const TorneoDetailsPage = () => {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedInscripcion, setSelectedInscripcion] = useState(null);
     const [paymentData, setPaymentData] = useState({ monto: '', metodo: 'efectivo' });
+    const [paymentJugador, setPaymentJugador] = useState(null);
     const [paying, setPaying] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'paid', 'pending'
@@ -28,10 +29,10 @@ const TorneoDetailsPage = () => {
     }, [id]);
 
     useEffect(() => {
-        if (isInscribeModalOpen) {
+        if (isInscribeModalOpen || isPaymentModalOpen) {
             fetchJugadores();
         }
-    }, [isInscribeModalOpen]);
+    }, [isInscribeModalOpen, isPaymentModalOpen]);
 
     const fetchTorneoDetails = async () => {
         setLoading(true);
@@ -76,6 +77,12 @@ const TorneoDetailsPage = () => {
             monto: torneo.costo_inscripcion, 
             metodo: 'efectivo' 
         });
+        // Pre-select the player from the inscription
+        if (inscripcion.jugador_id) {
+             setPaymentJugador({ id: inscripcion.jugador_id });
+        } else {
+             setPaymentJugador(null);
+        }
         setIsPaymentModalOpen(true);
     };
 
@@ -83,7 +90,16 @@ const TorneoDetailsPage = () => {
         e.preventDefault();
         setPaying(true);
         try {
-            await TorneoService.registrarPago(id, selectedInscripcion.id, paymentData);
+            const payload = { ...paymentData };
+            if (paymentData.metodo === 'cuenta_corriente') {
+                if (!paymentJugador) {
+                    alert('Debe seleccionar un jugador para Cuenta Corriente');
+                    setPaying(false);
+                    return;
+                }
+                payload.jugador_id = paymentJugador.id;
+            }
+            await TorneoService.registrarPago(id, selectedInscripcion.id, payload);
             setIsPaymentModalOpen(false);
             setSelectedInscripcion(null);
             fetchTorneoDetails();
@@ -350,7 +366,7 @@ const TorneoDetailsPage = () => {
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsPaymentModalOpen(false)}></div>
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full overflow-visible">
                             <form onSubmit={handlePayment}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                     <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Registrar Pago Inscripción</h3>
@@ -379,6 +395,17 @@ const TorneoDetailsPage = () => {
                                                 <option value="cuenta_corriente">Cuenta Corriente</option>
                                             </select>
                                         </div>
+                                        {paymentData.metodo === 'cuenta_corriente' && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Cargar a Cuenta de</label>
+                                                <SearchableSelect 
+                                                    options={jugadoresOptions}
+                                                    value={paymentJugador?.id}
+                                                    onChange={(option) => setPaymentJugador({ id: option.value, nombre: option.label })}
+                                                    placeholder="Seleccionar jugador..."
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
