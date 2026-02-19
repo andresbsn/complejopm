@@ -234,7 +234,7 @@ const ReportesPage = () => {
                     item.metodo || '-',
                     `$${formatCurrency(item.monto)}`
                 ];
-                if (isAdmin) row.push(item.tipo === 'VENTA' ? `$${formatCurrency(item.ganancia)}` : '-');
+                if (isAdmin) row.push((item.tipo === 'VENTA' || item.tipo === 'RESERVA') ? `$${formatCurrency(item.ganancia)}` : '-');
                 return row;
             });
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: yPos });
@@ -548,7 +548,7 @@ const ReportesPage = () => {
                                             <span className="text-gray-500 capitalize">{item.metodo || '-'}</span>
                                             <div>
                                                 <span className="font-bold text-gray-900">${formatCurrency(item.monto)}</span>
-                                                {isAdmin && item.tipo === 'VENTA' && (
+                                                {isAdmin && (item.tipo === 'VENTA' || item.tipo === 'RESERVA') && (
                                                     <span className={`block text-xs text-right ${parseFloat(item.ganancia) < 0 ? 'text-red-600' : 'text-green-600'}`}>
                                                         G: ${formatCurrency(item.ganancia)}
                                                     </span>
@@ -784,7 +784,7 @@ const ReportesPage = () => {
                                     </td>
                                     {isAdmin && (
                                         <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${parseFloat(item.ganancia) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                            {item.tipo === 'VENTA' ? `$${formatCurrency(item.ganancia)}` : '-'}
+                                            {(item.tipo === 'VENTA' || item.tipo === 'RESERVA') ? `$${formatCurrency(item.ganancia)}` : '-'}
                                         </td>
                                     )}
                                 </tr>

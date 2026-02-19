@@ -31,7 +31,7 @@ const reporteController = {
                         'Pago Turno ' || CASE WHEN c.tipo = 'PADEL' THEN 'Padel' ELSE 'Fútbol' END || ' ' || c.nombre as descripcion, 
                         p.metodo, 
                         p.monto,
-                        0 as ganancia,
+                        p.monto as ganancia,
                         p.observaciones,
                         LOWER(c.tipo) as categoria_venta
                     FROM pagos p
