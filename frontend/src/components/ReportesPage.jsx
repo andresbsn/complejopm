@@ -39,6 +39,12 @@ const ReportesPage = () => {
     const [cajasHistory, setCajasHistory] = useState([]);
     const [selectedCaja, setSelectedCaja] = useState(null);
     const [cajaMovimientos, setCajaMovimientos] = useState([]);
+    
+    // Modal Detalle Movimiento
+    const [selectedMov, setSelectedMov] = useState(null);
+    const [movDetail, setMovDetail] = useState(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         if (isAdmin) {
@@ -120,15 +126,27 @@ const ReportesPage = () => {
         // Special handling for Caja view
         if (activeTab === 'caja' && context) {
 
-             let total = 0;
-            const byMethod = {};
+            let total = parseFloat(context.saldo_inicial || 0);
+            const byMethod = {
+                'Saldo Inicial': total
+            };
 
             data.forEach(item => {
                 const monto = parseFloat(item.monto);
-                total += monto;
-                const method = item.metodo_pago || 'Otros';
-                if (!byMethod[method]) byMethod[method] = 0;
-                byMethod[method] += monto;
+                
+                // Excluir cortesías y movimientos internos del balance real de efectivo si no se desea?
+                // El usuario dijo que le "falta plata", así que sumamos todo lo que sea ingreso de plata real.
+                const metodo = (item.metodo_pago || '').toLowerCase();
+                const esEfectivo = metodo.includes('efectivo');
+                
+                // Si el reporte es de "Caja" y queremos el efectivo real, filtramos.
+                // Pero si queremos el "Balance Total" (incluyendo digital), sumamos todo.
+                if (isAdmin || esEfectivo) {
+                    total += monto;
+                    const method = item.metodo_pago || 'Otros';
+                    if (!byMethod[method]) byMethod[method] = 0;
+                    byMethod[method] += monto;
+                }
             });
             
              setStats({ total, totalGanancia: 0, byMethod });
@@ -193,6 +211,27 @@ const ReportesPage = () => {
             })
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
+    };
+
+    const handleVerDetalle = async (mov) => {
+        setSelectedMov(mov);
+        setShowModal(true);
+        setMovDetail(null);
+        
+        const isVenta = mov.tipo_movimiento === 'VENTA';
+        const isVentaGasto = mov.tipo_movimiento === 'GASTO' && mov.descripcion?.includes('Venta #');
+
+        if ((isVenta || isVentaGasto) && mov.referencia_id) {
+            setLoadingDetail(true);
+            try {
+                const data = await CajaService.getVentaDetalles(mov.referencia_id);
+                setMovDetail(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingDetail(false);
+            }
+        }
     };
 
     const handleBackToCajas = () => {
@@ -680,9 +719,17 @@ const ReportesPage = () => {
                                             <p className="font-medium text-gray-900 mb-1">{mov.descripcion}</p>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-gray-500 capitalize">{mov.metodo_pago}</span>
-                                                <span className={`font-bold ${parseFloat(mov.monto) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                                    ${formatCurrency(mov.monto)}
-                                                </span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`font-bold ${parseFloat(mov.monto) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                        ${formatCurrency(mov.monto)}
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => handleVerDetalle(mov)}
+                                                        className="p-1.5 bg-indigo-50 text-indigo-600 rounded-full"
+                                                    >
+                                                        👁️
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))
@@ -743,6 +790,7 @@ const ReportesPage = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Detalle</th>
                                 </tr>
                             )}
                             {activeTab === 'caja' && !selectedCaja && (
@@ -813,6 +861,15 @@ const ReportesPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mov.descripcion}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{mov.metodo_pago}</td>
                                     <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${mov.monto < 0 ? 'text-red-600' : 'text-green-600'}`}>${formatCurrency(mov.monto)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                        <button 
+                                            onClick={() => handleVerDetalle(mov)}
+                                            className="text-indigo-600 hover:text-indigo-900 transition-colors bg-indigo-50 p-1.5 rounded-full"
+                                            title="Ver detalle"
+                                        >
+                                            👁️
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                              {activeTab === 'caja' && !selectedCaja && cajasHistory.map(caja => (
@@ -834,6 +891,102 @@ const ReportesPage = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Modal de Detalle de Movimiento */}
+            {showModal && selectedMov && (
+                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowModal(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div className="sm:flex sm:items-start">
+                                    <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
+                                        selectedMov.tipo_movimiento === 'GASTO' ? 'bg-red-100' : 'bg-green-100'
+                                    }`}>
+                                        <span className="text-xl">
+                                            {selectedMov.tipo_movimiento === 'GASTO' ? '📉' : '💰'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                        <h3 className="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+                                            {selectedMov.descripcion?.includes('Cortesía') ? 'Detalle de Cortesía' : `Detalle de ${selectedMov.tipo_movimiento.replace('_', ' ')}`}
+                                        </h3>
+                                        <div className="mt-4 space-y-3 text-sm text-gray-600">
+                                            <div className="flex justify-between border-b pb-1">
+                                                <span className="font-semibold">Fecha:</span>
+                                                <span>{new Date(selectedMov.fecha).toLocaleString()}</span>
+                                            </div>
+                                            
+                                            {!selectedMov.descripcion?.includes('Venta #') && selectedMov.tipo_movimiento !== 'VENTA' && (
+                                                <>
+                                                    <div className="flex justify-between border-b pb-1">
+                                                        <span className="font-semibold">Descripción:</span>
+                                                        <span>{selectedMov.descripcion}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b pb-1">
+                                                        <span className="font-semibold">Método de Pago:</span>
+                                                        <span className="capitalize">{selectedMov.metodo_pago}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b pb-1 text-lg">
+                                                        <span className="font-bold text-gray-800">Monto:</span>
+                                                        <span className={`font-bold ${parseFloat(selectedMov.monto) < 0 ? 'text-red-700' : 'text-indigo-700'}`}>
+                                                            ${formatCurrency(selectedMov.monto)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {loadingDetail ? (
+                                                <div className="py-4 text-center">Cargando detalles adicionales...</div>
+                                            ) : (
+                                                movDetail && (selectedMov.tipo_movimiento === 'VENTA' || selectedMov.descripcion?.includes('Venta #')) && (
+                                                    <div className="mt-4 bg-gray-50 p-3 rounded">
+                                                        <h4 className="font-bold mb-2 border-b text-indigo-700">Productos de la Venta</h4>
+                                                        <table className="min-w-full">
+                                                            <thead>
+                                                                <tr className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                                    <th className="text-left py-1">Producto</th>
+                                                                    <th className="text-center py-1">Cant.</th>
+                                                                    <th className="text-right py-1">Subtotal</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {movDetail.map((item, idx) => (
+                                                                    <tr key={idx} className="border-t border-gray-200">
+                                                                        <td className="py-2">{item.producto_nombre || item.nombre}</td>
+                                                                        <td className="py-2 text-center">{item.cantidad}</td>
+                                                                        <td className="py-2 text-right">${formatCurrency(item.precio_unitario * item.cantidad)}</td>
+                                                                     </tr>
+                                                                ))}
+                                                            </tbody>
+                                                            <tfoot>
+                                                                <tr className="border-t-2 border-gray-300 font-bold">
+                                                                    <td colSpan="2" className="py-2 text-right">Monto Operación:</td>
+                                                                    <td className="py-2 text-right text-indigo-700">${formatCurrency(movDetail.reduce((acc, current) => acc + (current.precio_unitario * current.cantidad), 0))}</td>
+                                                                </tr>
+                                                            </tfoot>
+                                                        </table>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button
+                                    type="button"
+                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                    onClick={() => setShowModal(false)}
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

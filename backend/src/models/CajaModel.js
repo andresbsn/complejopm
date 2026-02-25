@@ -62,24 +62,40 @@ const CajaModel = {
         // Esto corrige el problema de movimientos "huérfanos" o mal asignados,
         // asegurando que el reporte muestre todo lo que pasó mientras la caja estaba abierta.
         const query = `
-            SELECT 'VENTA' as tipo_movimiento, v.fecha, 'Venta Cantina #' || v.id || COALESCE(' (' || v.observaciones || ')', '') as descripcion, CASE WHEN p.metodo = 'gastos_generales' THEN 0 ELSE p.monto END as monto, p.metodo as metodo_pago
+            SELECT 
+                'VENTA' as tipo_movimiento, 
+                v.id as referencia_id, 
+                v.fecha, 
+                CASE WHEN p.metodo = 'gastos_generales' THEN 'Cortesía/Gasto Cantina' ELSE 'Venta Cantina' END || COALESCE(' (' || v.observaciones || ')', '') as descripcion, 
+                CASE WHEN p.metodo = 'gastos_generales' THEN 0 ELSE p.monto END as monto, 
+                p.metodo as metodo_pago
             FROM ventas_cantina v
             JOIN pagos_ventas p ON v.id = p.venta_id
             WHERE v.fecha >= $1 AND ($2::timestamp IS NULL OR v.fecha <= $2::timestamp)
+            AND p.metodo <> 'gastos_generales'
             UNION ALL
-            SELECT 'PAGO_TURNO' as tipo_movimiento, fecha_pago as fecha, 'Pago Turno #' || turno_id || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
+            SELECT 'PAGO_TURNO' as tipo_movimiento, turno_id as referencia_id, fecha_pago as fecha, 'Pago Turno' || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
             FROM pagos 
             WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
             UNION ALL
-            SELECT 'INSCRIPCION' as tipo_movimiento, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago
+            SELECT 'INSCRIPCION' as tipo_movimiento, id as referencia_id, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago
             FROM inscripciones 
             WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
             UNION ALL
-            SELECT 'INGRESO_CUENTA' as tipo_movimiento, fecha, descripcion, monto, 'CC' as metodo_pago
+            SELECT 'INGRESO_CUENTA' as tipo_movimiento, id as referencia_id, fecha, descripcion, monto, 'CC' as metodo_pago
             FROM movimientos_cuenta 
             WHERE tipo = 'HABER' AND fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             UNION ALL
-            SELECT 'GASTO' as tipo_movimiento, fecha, descripcion, -monto as monto, 'Efectivo' as metodo_pago
+            SELECT 
+                'GASTO' as tipo_movimiento, 
+                CASE 
+                    WHEN descripcion LIKE '%(Venta #%)%' THEN (substring(descripcion from 'Venta #([0-9]+)'))::int 
+                    ELSE id 
+                END as referencia_id, 
+                fecha, 
+                descripcion, 
+                -monto as monto, 
+                CASE WHEN descripcion LIKE '%Cortesía%' THEN 'Cortesía' ELSE 'Efectivo' END as metodo_pago
             FROM gastos 
             WHERE fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             ORDER BY fecha DESC

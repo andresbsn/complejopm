@@ -15,6 +15,14 @@ const CajaPage = () => {
     const [success, setSuccess] = useState('');
     const [tab, setTab] = useState('actual'); // 'actual', 'historial'
     const [historial, setHistorial] = useState([]);
+    
+    // Paginación y Detalles
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
+    const [selectedMov, setSelectedMov] = useState(null);
+    const [movDetail, setMovDetail] = useState(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         fetchEstado();
@@ -103,13 +111,61 @@ const CajaPage = () => {
             // Venta, Pago, Inscripcion are income.
             // Movimiento Cuenta: 'HABER' is income.
             
-            // Exclude 'cuenta_corriente' from cash balance
-            if (m.metodo_pago !== 'cuenta_corriente') {
+            // Exclude non-cash movements from physical balance
+            const metodo = (m.metodo_pago || '').toLowerCase();
+            const esEfectivo = metodo.includes('efectivo');
+            const esDigital = metodo.includes('qr') || metodo.includes('debito') || metodo.includes('credito') || metodo.includes('transferencia');
+            
+            // Only 'efectivo' affects the physical cash balance used for closing
+            if (esEfectivo) {
                 total += parseFloat(m.monto);
             }
         });
         return total;
     };
+
+    const calcularIngresosTotales = () => {
+        let total = 0;
+        movimientos.forEach(m => {
+            const monto = parseFloat(m.monto);
+            if (monto > 0) {
+                const metodo = (m.metodo_pago || '').toLowerCase();
+                const esEfectivo = metodo.includes('efectivo');
+                const esDigital = metodo.includes('qr') || metodo.includes('debito') || metodo.includes('credito') || metodo.includes('transferencia');
+                
+                if (esEfectivo || esDigital) {
+                    total += monto;
+                }
+            }
+        });
+        return total;
+    };
+
+    const handleVerDetalle = async (mov) => {
+        setSelectedMov(mov);
+        setShowModal(true);
+        setMovDetail(null);
+        
+        const isVenta = mov.tipo_movimiento === 'VENTA';
+        const isVentaGasto = mov.tipo_movimiento === 'GASTO' && mov.descripcion?.includes('Venta #');
+
+        if ((isVenta || isVentaGasto) && mov.referencia_id) {
+            setLoadingDetail(true);
+            try {
+                const data = await CajaService.getVentaDetalles(mov.referencia_id);
+                setMovDetail(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingDetail(false);
+            }
+        }
+    };
+
+    // Paginación
+    const totalPages = Math.ceil(movimientos.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentMovimientos = movimientos.slice(startIndex, startIndex + itemsPerPage);
 
     if (loading && !caja) return <div className="p-4">Cargando...</div>;
 
@@ -166,20 +222,21 @@ const CajaPage = () => {
                                     // Calcular totales
                                     const totales = {
                                         efectivo: { nombre: 'EFECTIVO', icon: '💰', ingresos: 0, egresos: 0, count: 0, inicial: parseFloat(caja.saldo_inicial) || 0 },
-                                        qr: { nombre: 'QR', icon: '💳', ingresos: 0, egresos: 0, count: 0, inicial: 0 },
+                                        qr: { nombre: 'QR/DIGITAL', icon: '💳', ingresos: 0, egresos: 0, count: 0, inicial: 0 },
                                         transferencia: { nombre: 'TRANSFERENCIA', icon: '🔄', ingresos: 0, egresos: 0, count: 0, inicial: 0 },
+                                        interno: { nombre: 'INTERNO/CORTESÍA', icon: '📒', ingresos: 0, egresos: 0, count: 0, inicial: 0 },
                                         otros: { nombre: 'OTROS', icon: '📝', ingresos: 0, egresos: 0, count: 0, inicial: 0 }
                                     };
 
                                     movimientos.forEach(m => {
                                         const metodoRaw = (m.metodo_pago || '').toLowerCase();
+                                        const descripcionRaw = (m.descripcion || '').toLowerCase();
                                         let key = 'otros';
+                                        
                                         if (metodoRaw.includes('efectivo')) key = 'efectivo';
                                         else if (metodoRaw.includes('qr') || metodoRaw.includes('debito') || metodoRaw.includes('credito')) key = 'qr';
                                         else if (metodoRaw.includes('transferencia')) key = 'transferencia';
-                                        
-                                        // Si es una venta 'gastos_generales', a veces viene con monto 0 o no suma a caja,
-                                        // pero si tiene monto, lo sumamos.
+                                        else if (metodoRaw.includes('cortesía') || metodoRaw.includes('cortesia') || metodoRaw.includes('gastos_generales')) key = 'interno';
                                         
                                         const monto = parseFloat(m.monto);
                                         if (monto >= 0) {
@@ -190,13 +247,12 @@ const CajaPage = () => {
                                         totales[key].count += 1;
                                     });
                                     
-                                    // Filtrar métodos que tengan movimiento o saldo inicial > 0, o mostrar siempre los principales?
-                                    // Mostraremos los principales siempre para consistencia visual
-                                    let methodsToShow = ['efectivo', 'qr', 'transferencia'];
+                                    // Métodos a mostrar
+                                    let methodsToShow = ['efectivo', 'qr', 'transferencia', 'interno'];
                                     
-                                    // Si no es admin, mostrar solo efectivo
+                                    // Si no es admin, mostrar solo efectivo e interno
                                     if (!isAdmin) {
-                                        methodsToShow = ['efectivo'];
+                                        methodsToShow = ['efectivo', 'interno'];
                                     }
 
                                     // Si hay 'otros' con datos, lo agregamos y es admin
@@ -259,6 +315,10 @@ const CajaPage = () => {
                                             <span className="text-gray-800">Saldo Calculado:</span>
                                             <span className="text-green-600">${formatCurrency(calcularSaldoActual())}</span>
                                         </div>
+                                        <div className="flex justify-between text-md font-semibold text-indigo-600">
+                                            <span>Total Ingresos:</span>
+                                            <span>${formatCurrency(calcularIngresosTotales())}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -290,13 +350,12 @@ const CajaPage = () => {
                                      <div className="px-6 py-4 border-b border-gray-200">
                                         <h3 className="text-lg font-semibold text-gray-800">Movimientos de la Sesión</h3>
                                     </div>
-                                    {/* Mobile Cards for Movements */}
                                     <div className="md:hidden space-y-4 p-4">
-                                        {movimientos.length === 0 ? (
+                                        {currentMovimientos.length === 0 ? (
                                             <div className="text-center text-sm text-gray-500">No hay movimientos registrados</div>
                                         ) : (
-                                            movimientos.map((mov, index) => (
-                                                <div key={index} className="bg-white border rounded-lg shadow-sm p-4">
+                                            currentMovimientos.map((mov, index) => (
+                                                <div key={index} className="bg-white border rounded-lg shadow-sm p-4 relative">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                             mov.tipo_movimiento === 'VENTA' ? 'bg-green-100 text-green-800' : 
@@ -304,7 +363,16 @@ const CajaPage = () => {
                                                         }`}>
                                                             {mov.tipo_movimiento}
                                                         </span>
-                                                        <span className="text-xs text-gray-500">{new Date(mov.fecha).toLocaleTimeString()}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-gray-500">{new Date(mov.fecha).toLocaleTimeString()}</span>
+                                                            <button 
+                                                                onClick={() => handleVerDetalle(mov)}
+                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                                title="Ver detalle"
+                                                            >
+                                                                👁️
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     <p className="font-medium text-gray-900 mb-1">{mov.descripcion}</p>
                                                     <div className="flex justify-between items-center text-sm">
@@ -326,15 +394,16 @@ const CajaPage = () => {
                                                     <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Descripción</th>
                                                     <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Método</th>
                                                     <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Monto</th>
+                                                    <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {movimientos.length === 0 ? (
+                                                {currentMovimientos.length === 0 ? (
                                                      <tr>
-                                                        <td colSpan="5" className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">No hay movimientos registrados</td>
+                                                        <td colSpan="6" className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">No hay movimientos registrados</td>
                                                     </tr>
                                                 ) : (
-                                                    movimientos.map((mov, index) => (
+                                                    currentMovimientos.map((mov, index) => (
                                                         <tr key={index}>
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                                 {new Date(mov.fecha).toLocaleTimeString()}
@@ -352,12 +421,49 @@ const CajaPage = () => {
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right font-medium">
                                                                 ${formatCurrency(mov.monto)}
                                                             </td>
+                                                            <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
+                                                                <button 
+                                                                    onClick={() => handleVerDetalle(mov)}
+                                                                    className="text-indigo-600 hover:text-indigo-900 transition-colors bg-indigo-50 p-1.5 rounded-full"
+                                                                    title="Ver detalle"
+                                                                >
+                                                                    👁️
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     ))
                                                 )}
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Pagination Controls */}
+                                    {totalPages > 1 && (
+                                        <div className="px-5 py-4 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between">
+                                            <span className="text-xs xs:text-sm text-gray-900 mb-2 xs:mb-0">
+                                                Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, movimientos.length)} de {movimientos.length}
+                                            </span>
+                                            <div className="inline-flex mt-2 xs:mt-0">
+                                                <button 
+                                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                    disabled={currentPage === 1}
+                                                    className={`text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-l ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    Prev
+                                                </button>
+                                                <div className="flex items-center px-4 bg-gray-100 text-gray-700 font-medium border-t border-b">
+                                                    Pág. {currentPage} de {totalPages}
+                                                </div>
+                                                <button 
+                                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                    disabled={currentPage === totalPages}
+                                                    className={`text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-r ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -438,6 +544,99 @@ const CajaPage = () => {
                         </table>
                     </div>
                 </>
+            )}
+            {/* Modal de Detalle de Movimiento */}
+            {showModal && selectedMov && (
+                <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowModal(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div className="sm:flex sm:items-start">
+                                    <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
+                                        selectedMov.tipo_movimiento === 'VENTA' ? 'bg-green-100' : 'bg-blue-100'
+                                    }`}>
+                                        <span className="text-xl">
+                                            {selectedMov.tipo_movimiento === 'VENTA' ? '🍕' : '🎾'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                        <h3 className="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+                                            {selectedMov.descripcion?.includes('Cortesía') ? 'Detalle de Cortesía' : `Detalle de ${selectedMov.tipo_movimiento.replace('_', ' ')}`}
+                                        </h3>
+                                        <div className="mt-4 space-y-3 text-sm text-gray-600">
+                                            <div className="flex justify-between border-b pb-1">
+                                                <span className="font-semibold">Fecha:</span>
+                                                <span>{new Date(selectedMov.fecha).toLocaleString()}</span>
+                                            </div>
+                                            
+                                            {selectedMov.tipo_movimiento !== 'VENTA' && !selectedMov.descripcion?.includes('Venta #') && (
+                                                <>
+                                                    <div className="flex justify-between border-b pb-1">
+                                                        <span className="font-semibold">Descripción:</span>
+                                                        <span>{selectedMov.descripcion}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b pb-1">
+                                                        <span className="font-semibold">Método de Pago:</span>
+                                                        <span className="capitalize">{selectedMov.metodo_pago}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b pb-1 text-lg">
+                                                        <span className="font-bold text-gray-800">Monto:</span>
+                                                        <span className="font-bold text-indigo-700">${formatCurrency(selectedMov.monto)}</span>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {loadingDetail ? (
+                                                <div className="py-4 text-center">Cargando detalles adicionales...</div>
+                                            ) : (
+                                                movDetail && (selectedMov.tipo_movimiento === 'VENTA' || selectedMov.descripcion?.includes('Venta #')) && (
+                                                    <div className="mt-4 bg-gray-50 p-3 rounded">
+                                                        <h4 className="font-bold mb-2 border-b text-indigo-700">Productos de la Venta</h4>
+                                                        <table className="min-w-full">
+                                                            <thead>
+                                                                <tr className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                                    <th className="text-left py-1">Producto</th>
+                                                                    <th className="text-center py-1">Cant.</th>
+                                                                    <th className="text-right py-1">Subtotal</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {movDetail.map((item, idx) => (
+                                                                    <tr key={idx} className="border-t border-gray-200">
+                                                                        <td className="py-2">{item.producto_nombre}</td>
+                                                                        <td className="py-2 text-center">{item.cantidad}</td>
+                                                                        <td className="py-2 text-right">${formatCurrency(item.precio_unitario * item.cantidad)}</td>
+                                                                     </tr>
+                                                                ))}
+                                                            </tbody>
+                                                            <tfoot>
+                                                                <tr className="border-t-2 border-gray-300 font-bold">
+                                                                    <td colSpan="2" className="py-2 text-right">Monto Operación:</td>
+                                                                    <td className="py-2 text-right text-indigo-700">${formatCurrency(movDetail.reduce((acc, current) => acc + (current.precio_unitario * current.cantidad), 0))}</td>
+                                                                </tr>
+                                                            </tfoot>
+                                                        </table>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button 
+                                    type="button" 
+                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                    onClick={() => setShowModal(false)}
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

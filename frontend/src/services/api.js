@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -248,6 +248,10 @@ export const CajaService = {
     },
     getById: async (id) => {
         const response = await api.get(`/cajas/${id}`);
+        return response.data;
+    },
+    getVentaDetalles: async (id) => {
+        const response = await api.get(`/ventas/${id}/detalles`);
         return response.data;
     }
 };
