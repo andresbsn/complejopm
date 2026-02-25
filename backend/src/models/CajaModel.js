@@ -74,9 +74,17 @@ const CajaModel = {
             WHERE v.fecha >= $1 AND ($2::timestamp IS NULL OR v.fecha <= $2::timestamp)
             AND p.metodo <> 'gastos_generales'
             UNION ALL
-            SELECT 'PAGO_TURNO' as tipo_movimiento, turno_id as referencia_id, fecha_pago as fecha, 'Pago Turno' || COALESCE(' (' || observaciones || ')', '') as descripcion, CASE WHEN metodo = 'gastos_generales' THEN 0 ELSE monto END, metodo as metodo_pago
-            FROM pagos 
-            WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
+            SELECT 
+                'PAGO_TURNO' as tipo_movimiento, 
+                p.turno_id as referencia_id, 
+                p.fecha_pago as fecha, 
+                'Turno ' || c.tipo || ' - ' || c.nombre || ' (' || SUBSTRING(t.hora_inicio::text, 1, 5) || 'hs)' as descripcion, 
+                CASE WHEN p.metodo = 'gastos_generales' THEN 0 ELSE p.monto END, 
+                p.metodo as metodo_pago
+            FROM pagos p
+            JOIN turnos t ON p.turno_id = t.id
+            JOIN canchas c ON t.cancha_id = c.id
+            WHERE p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)
             UNION ALL
             SELECT 'INSCRIPCION' as tipo_movimiento, id as referencia_id, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago
             FROM inscripciones 
