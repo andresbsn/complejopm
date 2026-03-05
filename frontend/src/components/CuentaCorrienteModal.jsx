@@ -41,9 +41,7 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
         try {
             let descFinal = descripcion;
             if (tipoMovimiento === 'HABER') {
-                descFinal = descripcion 
-                    ? `${descripcion} - ${metodoPago}`
-                    : `Pago recibido (${metodoPago})`;
+                descFinal = `Pago de Cuenta Corriente` + (descripcion ? ` - ${descripcion}` : '');
             } else if (!descFinal) {
                 descFinal = 'Deuda manual';
             }
@@ -52,7 +50,8 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
                 jugador_id: jugador.id,
                 tipo: tipoMovimiento,
                 monto: parseFloat(monto),
-                descripcion: descFinal
+                descripcion: descFinal,
+                metodo_pago: tipoMovimiento === 'HABER' ? metodoPago : null
             });
             setShowForm(false);
             setMonto('');

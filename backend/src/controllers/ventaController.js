@@ -35,6 +35,17 @@ const ventaController = {
             console.error('Error al obtener detalles de venta:', error);
             res.status(500).json({ error: 'Error interno del servidor' });
         }
+    },
+
+    generarNotaCredito: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const nc = await VentaModel.generarNotaCredito(id, req.user ? req.user.id : null);
+            res.status(201).json(nc);
+        } catch (error) {
+            console.error('Error al generar nota de crédito:', error);
+            res.status(500).json({ error: error.message || 'Error interno del servidor' });
+        }
     }
 };
 

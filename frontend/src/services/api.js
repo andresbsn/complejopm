@@ -67,6 +67,10 @@ export const VentaService = {
     getDetalles: async (id) => {
         const response = await api.get(`/ventas/${id}/detalles`);
         return response.data;
+    },
+    generarNotaCredito: async (id) => {
+        const response = await api.post(`/ventas/${id}/nota-credito`);
+        return response.data;
     }
 };
 

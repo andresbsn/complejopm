@@ -15,7 +15,7 @@ const cuentaController = {
 
     addMovimiento: async (req, res) => {
         try {
-            const { jugador_id, tipo, monto, descripcion, referencia_id } = req.body;
+            const { jugador_id, tipo, monto, descripcion, referencia_id, metodo_pago } = req.body;
 
             if (!jugador_id || !tipo || !monto) {
                 return res.status(400).json({ error: 'Faltan datos requeridos' });
@@ -34,7 +34,8 @@ const cuentaController = {
                 monto,
                 descripcion,
                 referencia_id,
-                caja_id
+                caja_id,
+                metodo_pago
             });
 
             const nuevoSaldo = await CuentaModel.getSaldo(jugador_id);

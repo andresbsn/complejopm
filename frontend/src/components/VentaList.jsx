@@ -112,12 +112,32 @@ const VentaList = ({ refreshTrigger }) => {
                                 <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full capitalize">
                                     {venta.metodo_pago || '-'}
                                 </span>
-                                <button 
-                                    onClick={() => verDetalles(venta.id)}
-                                    className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
-                                >
-                                    Ver Detalles
-                                </button>
+                                <div className="space-x-3">
+                                    <button 
+                                        onClick={() => verDetalles(venta.id)}
+                                        className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+                                    >
+                                        Ver Detalles
+                                    </button>
+                                    {!venta.observaciones?.includes('Nota de Crédito') && (
+                                        <button 
+                                            onClick={async () => {
+                                                if(window.confirm('¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.')) {
+                                                    try {
+                                                        await VentaService.generarNotaCredito(venta.id);
+                                                        alert('Nota de crédito generada con éxito');
+                                                        cargarVentas();
+                                                    } catch (err) {
+                                                        alert('Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
+                                                    }
+                                                }
+                                            }}
+                                            className="text-sm text-red-600 font-medium hover:text-red-800"
+                                        >
+                                            Nota de Crédito
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -145,10 +165,28 @@ const VentaList = ({ refreshTrigger }) => {
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button 
                                             onClick={() => verDetalles(venta.id)}
-                                            className="text-indigo-600 hover:text-indigo-900 transition-colors duration-150"
+                                            className="text-indigo-600 hover:text-indigo-900 transition-colors duration-150 mr-4"
                                         >
                                             Ver Detalles
                                         </button>
+                                        {!venta.observaciones?.includes('Nota de Crédito') && (
+                                            <button 
+                                                onClick={async () => {
+                                                    if(window.confirm('¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.')) {
+                                                        try {
+                                                            await VentaService.generarNotaCredito(venta.id);
+                                                            alert('Nota de crédito generada con éxito');
+                                                            cargarVentas();
+                                                        } catch (err) {
+                                                            alert('Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
+                                                        }
+                                                    }
+                                                }}
+                                                className="text-red-600 hover:text-red-900 transition-colors duration-150"
+                                            >
+                                                Nota de Crédito
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

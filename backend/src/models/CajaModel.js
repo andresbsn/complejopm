@@ -90,7 +90,7 @@ const CajaModel = {
             FROM inscripciones 
             WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
             UNION ALL
-            SELECT 'INGRESO_CUENTA' as tipo_movimiento, id as referencia_id, fecha, descripcion, monto, 'CC' as metodo_pago
+            SELECT 'INGRESO_CUENTA' as tipo_movimiento, id as referencia_id, fecha, descripcion, monto, COALESCE(metodo_pago, 'CC') as metodo_pago
             FROM movimientos_cuenta 
             WHERE tipo = 'HABER' AND fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
             UNION ALL
