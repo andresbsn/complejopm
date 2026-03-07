@@ -60,24 +60,9 @@ const TorneoController = {
     async registrarPagoInscripcion(req, res) {
         try {
             const { id, inscripcionId } = req.params;
-            const { monto, metodo } = req.body;
-
-            let inscripcion;
-            if (metodo === 'cuenta_corriente') {
-                inscripcion = await InscripcionModel.registrarPago(inscripcionId, monto, metodo);
-
-                const CuentaModel = require('../models/CuentaModel');
-                await CuentaModel.addMovimiento({
-                    jugador_id: inscripcion.jugador_id,
-                    tipo: 'DEBE',
-                    monto: monto,
-                    descripcion: `Inscripción Torneo: ${id}`,
-                    referencia_id: inscripcionId,
-                    caja_id: null
-                });
-            } else {
-                inscripcion = await InscripcionModel.registrarPago(inscripcionId, monto, metodo);
-            }
+            // The body can now be a single payment object or an array of payment objects
+            // The model handles the transition to supporting multiple payments
+            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, req.body);
             res.json(inscripcion);
         } catch (error) {
             console.error('Error al registrar pago de inscripcion:', error);

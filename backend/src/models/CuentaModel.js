@@ -12,14 +12,15 @@ const CuentaModel = {
         return result.rows;
     },
 
-    async addMovimiento(movimiento) {
+    async addMovimiento(movimiento, client = null) {
         const { jugador_id, tipo, monto, descripcion, referencia_id, caja_id, metodo_pago } = movimiento;
         const query = `
             INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id, metodo_pago)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `;
-        const result = await pool.query(query, [jugador_id, tipo, monto, descripcion, referencia_id, caja_id, metodo_pago]);
+        const db = client || pool;
+        const result = await db.query(query, [jugador_id, tipo, monto, descripcion, referencia_id, caja_id, metodo_pago]);
         return result.rows[0];
     },
 

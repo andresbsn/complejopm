@@ -25,16 +25,63 @@ const InscripcionModel = {
         return result.rows;
     },
 
-    async registrarPago(id, monto, metodo) {
-        const query = `
-            UPDATE inscripciones
-            SET pagado = TRUE, monto_abonado = $2, fecha_pago = CURRENT_TIMESTAMP, metodo_pago = $3, 
-                caja_id = CASE WHEN $4 = 'cuenta_corriente' THEN NULL ELSE (SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1) END
-            WHERE id = $1
-            RETURNING *
-        `;
-        const result = await pool.query(query, [id, monto, metodo, metodo]);
-        return result.rows[0];
+    async registrarPago(id, pagos) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
+            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
+
+            const payments = Array.isArray(pagos) ? pagos : [pagos];
+            let totalRecibido = 0;
+            let ultimoMetodo = '';
+
+            for (const p of payments) {
+                const monto = parseFloat(p.monto);
+                const metodo = p.metodo;
+                totalRecibido += monto;
+                ultimoMetodo = metodo;
+
+                await client.query(`
+                    INSERT INTO pagos_inscripcion (inscripcion_id, monto, metodo, caja_id)
+                    VALUES ($1, $2, $3, $4)
+                `, [id, monto, metodo, cajaId]);
+
+                if (metodo === 'cuenta_corriente') {
+                    const { jugador_id, torneo_id } = p; // Ensure these are passed
+                    const CuentaModel = require('./CuentaModel');
+                    await CuentaModel.addMovimiento({
+                        jugador_id: jugador_id,
+                        tipo: 'DEBE',
+                        monto: monto,
+                        descripcion: `Inscripción Torneo #${torneo_id || ''}`,
+                        referencia_id: id,
+                        caja_id: cajaId
+                    }, client); // Pass client for transaction context if CuentaModel supports it
+                }
+            }
+
+            const queryUpdate = `
+                UPDATE inscripciones i
+                SET 
+                    monto_abonado = COALESCE(i.monto_abonado, 0) + $2,
+                    fecha_pago = CURRENT_TIMESTAMP,
+                    metodo_pago = $3,
+                    pagado = (COALESCE(i.monto_abonado, 0) + $2) >= (SELECT costo_inscripcion FROM torneos t WHERE t.id = i.torneo_id)
+                WHERE i.id = $1
+                RETURNING *
+            `;
+            const result = await client.query(queryUpdate, [id, totalRecibido, payments.length > 1 ? 'Múltiple' : ultimoMetodo]);
+
+            await client.query('COMMIT');
+            return result.rows[0];
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     },
 
     async cambiarEstado(id, estado) {

@@ -86,9 +86,11 @@ const CajaModel = {
             JOIN canchas c ON t.cancha_id = c.id
             WHERE p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)
             UNION ALL
-            SELECT 'INSCRIPCION' as tipo_movimiento, id as referencia_id, fecha_pago as fecha, 'Inscripción Torneo', monto_abonado as monto, metodo_pago
-            FROM inscripciones 
-            WHERE fecha_pago >= $1 AND ($2::timestamp IS NULL OR fecha_pago <= $2::timestamp)
+            SELECT 'INSCRIPCION' as tipo_movimiento, p.id as referencia_id, p.fecha_pago as fecha, 'Inscripción Torneo' || ' - ' || t.descripcion as descripcion, p.monto as monto, p.metodo as metodo_pago
+            FROM pagos_inscripcion p
+            JOIN inscripciones i ON p.inscripcion_id = i.id
+            JOIN torneos t ON i.torneo_id = t.id
+            WHERE p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)
             UNION ALL
             SELECT 'INGRESO_CUENTA' as tipo_movimiento, id as referencia_id, fecha, descripcion, monto, COALESCE(metodo_pago, 'CC') as metodo_pago
             FROM movimientos_cuenta 
