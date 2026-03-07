@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { TorneoService, JugadorService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const TorneoDetailsPage = () => {
     const { id } = useParams();
@@ -64,8 +65,9 @@ const TorneoDetailsPage = () => {
             setIsInscribeModalOpen(false);
             setSelectedJugador(null);
             fetchTorneoDetails();
+            alerts.toast('success', 'Jugador inscripto exitosamente');
         } catch (error) {
-            alert(error.response?.data?.error || 'Error al inscribir jugador');
+            alerts.error('Error', error.response?.data?.error || 'Error al inscribir jugador');
         } finally {
             setInscribing(false);
         }
@@ -105,13 +107,13 @@ const TorneoDetailsPage = () => {
         
         const totalAbonar = pagos.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
         if (totalAbonar <= 0) {
-            alert('El monto total debe ser mayor a 0');
+            alerts.warning('Monto inválido', 'El monto total debe ser mayor a 0');
             return;
         }
 
         const hasCCWithoutJugador = pagos.some(p => p.metodo === 'cuenta_corriente' && !p.jugador_id);
         if (hasCCWithoutJugador) {
-            alert('Debe seleccionar un jugador para los pagos con Cuenta Corriente');
+            alerts.warning('Información faltante', 'Debe seleccionar un jugador para los pagos con Cuenta Corriente');
             return;
         }
 
@@ -121,20 +123,23 @@ const TorneoDetailsPage = () => {
             setIsPaymentModalOpen(false);
             setSelectedInscripcion(null);
             fetchTorneoDetails();
+            alerts.toast('success', 'Pago registrado exitosamente');
         } catch (error) {
-            alert('Error al registrar pago');
+            alerts.error('Error', 'No se pudo registrar el pago');
         } finally {
             setPaying(false);
         }
     };
 
     const handleBaja = async (inscripcion) => {
-        if (!window.confirm('¿Está seguro de dar de baja a este jugador?')) return;
+        const result = await alerts.confirm('¿Dar de baja?', `¿Está seguro de dar de baja a ${inscripcion.jugador_nombre}?`);
+        if (!result.isConfirmed) return;
         try {
             await TorneoService.darDeBaja(id, inscripcion.id);
+            alerts.toast('success', 'Baja registrada');
             fetchTorneoDetails();
         } catch (error) {
-            alert('Error al dar de baja');
+            alerts.error('Error', 'No se pudo dar de baja al jugador');
         }
     };
 

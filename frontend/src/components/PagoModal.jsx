@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api, { TurnoService, JugadorService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
 import SearchableSelect from './SearchableSelect';
+import { alerts } from '../utils/alerts';
 
 const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     const saldoPendiente = parseFloat(turno.monto_total) - parseFloat(turno.monto_pagado || 0);
@@ -32,7 +33,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
         e.preventDefault();
         
         if (metodo === 'cuenta_corriente' && !selectedJugadorId) {
-            alert('Debe seleccionar un jugador para cargar a cuenta corriente.');
+            alerts.warning('Faltan datos', 'Debe seleccionar un jugador para cargar a cuenta corriente.');
             return;
         }
 
@@ -62,10 +63,11 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                 jugador_id: metodo === 'cuenta_corriente' ? selectedJugadorId : null
             });
             onPagoSuccess();
+            alerts.toast('success', 'Pago registrado exitosamente');
             onClose();
         } catch (error) {
             console.error('Error al registrar pago:', error);
-            alert('Error al registrar el pago: ' + (error.response?.data?.error || error.message));
+            alerts.error('Error', 'No se pudo registrar el pago: ' + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }
@@ -79,16 +81,18 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
         }
         
         // For regular turnos, cancel directly
-        if (!window.confirm('¿Está seguro de que desea cancelar este turno?')) return;
+        const result = await alerts.confirm('¿Cancelar turno?', '¿Está seguro de que desea cancelar este turno?');
+        if (!result.isConfirmed) return;
         
         setLoading(true);
         try {
             await TurnoService.updateStatus(turno.id, 'cancelado');
             onPagoSuccess(); // Refresca la lista
+            alerts.toast('success', 'Turno cancelado');
             onClose();
         } catch (error) {
             console.error('Error al cancelar turno:', error);
-            alert('Error al cancelar el turno');
+            alerts.error('Error', 'No se pudo cancelar el turno');
         } finally {
             setLoading(false);
         }
@@ -110,17 +114,19 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
             });
             setShowCancelOptions(false);
             onPagoSuccess();
+            alerts.toast('success', 'Turno cancelado por hoy');
             onClose();
         } catch (error) {
             console.error('Error al cancelar turno:', error);
-            alert('Error al cancelar el turno');
+            alerts.error('Error', 'No se pudo cancelar el turno');
         } finally {
             setLoading(false);
         }
     };
 
     const handleCancelPermanently = async () => {
-        if (!window.confirm('¿Está seguro de eliminar este turno fijo permanentemente? Esta acción no se puede deshacer.')) return;
+        const result = await alerts.confirm('¿Eliminar definitivamente?', '¿Está seguro de eliminar este turno fijo permanentemente? Esta acción no se puede deshacer.');
+        if (!result.isConfirmed) return;
         
         setLoading(true);
         try {
@@ -129,10 +135,11 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
             await api.delete(`/turnos/fijos/${fijoId}`);
             setShowCancelOptions(false);
             onPagoSuccess();
+            alerts.toast('success', 'Turno fijo eliminado');
             onClose();
         } catch (error) {
             console.error('Error al eliminar turno fijo:', error);
-            alert('Error al eliminar el turno fijo');
+            alerts.error('Error', 'No se pudo eliminar el turno fijo');
         } finally {
             setLoading(false);
         }

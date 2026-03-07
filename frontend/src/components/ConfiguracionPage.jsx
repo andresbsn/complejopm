@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguracionService } from '../services/api';
 import UsuariosTab from './UsuariosTab';
+import { alerts } from '../utils/alerts';
 
 const ConfiguracionPage = () => {
     const [activeTab, setActiveTab] = useState('general');
@@ -16,7 +17,6 @@ const ConfiguracionPage = () => {
         HORARIO_CIERRE: ''
     });
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(null);
 
     useEffect(() => {
         if (activeTab === 'general') {
@@ -53,11 +53,10 @@ const ConfiguracionPage = () => {
             await ConfiguracionService.update('DURACION_FUTBOL', config.DURACION_FUTBOL);
             await ConfiguracionService.update('HORARIO_APERTURA', config.HORARIO_APERTURA);
             await ConfiguracionService.update('HORARIO_CIERRE', config.HORARIO_CIERRE);
-            setMessage({ type: 'success', text: 'Configuración guardada exitosamente' });
-            setTimeout(() => setMessage(null), 3000);
+            alerts.success('¡Guardado!', 'La configuración se actualizó correctamente.');
         } catch (error) {
             console.error('Error al guardar configuración:', error);
-            setMessage({ type: 'error', text: 'Error al guardar la configuración' });
+            alerts.error('Error', 'No se pudieron guardar los cambios.');
         } finally {
             setLoading(false);
         }
@@ -100,12 +99,6 @@ const ConfiguracionPage = () => {
                         <div>Cargando configuración...</div>
                     ) : (
                         <>
-                            {message && (
-                                <div className={`mb-4 p-3 rounded-md ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {message.text}
-                                </div>
-                            )}
-
                             <form onSubmit={handleSubmit} className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Precios */}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TurnoService } from '../services/api';
 import PagoModal from './PagoModal';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const TurnoList = () => {
   const [turnos, setTurnos] = useState([]);
@@ -77,27 +78,27 @@ const TurnoList = () => {
                               return;
                           }
                           if (turno.es_fijo) {
-                              if (window.confirm('Este es un turno fijo. ¿Desea confirmar la asistencia para hoy y registrar pago?')) {
-                                  TurnoService.create({
-                                      cancha_id: turno.cancha_id,
-                                      fecha: fecha,
-                                      hora_inicio: turno.hora_inicio,
-                                      hora_fin: turno.hora_fin,
-                                      cliente_nombre: turno.cliente_nombre,
-                                      cliente_telefono: turno.cliente_telefono,
-                                      monto_total: turno.monto_total
-                                  }).then(newTurno => {
-                                      fetchTurnos(); 
-                                      setSelectedTurno(newTurno); 
-                                  });
-                              } else {
-                                  // Permitir abrir modal para cancelar el fijo si se desea
-                                  // Pero el click principal es confirmar. 
-                                  // Podríamos abrir el modal directamente y que el usuario decida si pagar (confirmar) o cancelar.
-                                  // Cambio de estrategia: Abrir modal directamente pasando el objeto fijo.
-                                  // El modal ya maneja la creación si se paga o se cancela.
-                                  setSelectedTurno({...turno, fecha: fecha}); 
-                              }
+                              alerts.confirm('Confirmar Asistencia', 'Este es un turno fijo. ¿Desea confirmar la asistencia para hoy y registrar el pago?')
+                                .then(result => {
+                                    if (result.isConfirmed) {
+                                        TurnoService.create({
+                                            cancha_id: turno.cancha_id,
+                                            fecha: fecha,
+                                            hora_inicio: turno.hora_inicio,
+                                            hora_fin: turno.hora_fin,
+                                            cliente_nombre: turno.cliente_nombre,
+                                            cliente_telefono: turno.cliente_telefono,
+                                            monto_total: turno.monto_total
+                                        }).then(newTurno => {
+                                            fetchTurnos(); 
+                                            setSelectedTurno(newTurno); 
+                                        }).catch(err => {
+                                            alerts.error('Error', 'No se pudo crear el turno de asistencia.');
+                                        });
+                                    } else {
+                                        setSelectedTurno({...turno, fecha: fecha}); 
+                                    }
+                                });
                           } else {
                               setSelectedTurno(turno);
                           }

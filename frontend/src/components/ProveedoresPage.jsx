@@ -3,6 +3,7 @@ import { ProveedorService, CompraService } from '../services/api'; // Added Comp
 import CuentaProveedorModal from './CuentaProveedorModal';
 import CompraForm from './CompraForm';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const ProveedoresPage = () => {
     const [activeTab, setActiveTab] = useState('proveedores'); // 'proveedores', 'compras'
@@ -69,22 +70,26 @@ const ProveedoresPage = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Seguro que desea eliminar este proveedor?')) return;
+        const result = await alerts.confirm('¿Eliminar proveedor?', '¿Estás seguro de que deseas eliminar este proveedor? Esta acción no se puede deshacer si tiene movimientos.');
+        if (!result.isConfirmed) return;
         try {
             await ProveedorService.delete(id);
+            alerts.toast('success', 'Proveedor eliminado');
             fetchProveedores();
         } catch (error) {
-            alert('Error al eliminar proveedor');
+            alerts.error('Error', 'No se pudo eliminar el proveedor');
         }
     };
     
     const handleDeleteCompra = async (id) => {
-         if (!window.confirm('¿Seguro que desea eliminar esta compra? Se revertirá la deuda.')) return;
+        const result = await alerts.confirm('¿Eliminar compra?', '¿Estás seguro de que deseas eliminar esta compra? Se revertirá la deuda asociada.');
+        if (!result.isConfirmed) return;
         try {
             await CompraService.delete(id);
+            alerts.toast('success', 'Compra eliminada');
             fetchCompras();
         } catch (error) {
-            alert('Error al eliminar compra: ' + error.response?.data?.error);
+            alerts.error('Error', 'No se pudo eliminar la compra: ' + (error.response?.data?.error || error.message));
         }
     };
 
@@ -93,15 +98,17 @@ const ProveedoresPage = () => {
         try {
             if (editingProvider) {
                 await ProveedorService.update(editingProvider.id, formData);
+                alerts.toast('success', 'Proveedor actualizado');
             } else {
                 await ProveedorService.create(formData);
+                alerts.toast('success', 'Proveedor creado');
             }
             setIsFormOpen(false);
             setEditingProvider(null);
             setFormData({ nombre: '', contacto: '', telefono: '', email: '' });
             fetchProveedores();
         } catch (error) {
-            alert('Error al guardar proveedor');
+            alerts.error('Error', 'Error al guardar proveedor');
         }
     };
     
@@ -111,9 +118,8 @@ const ProveedoresPage = () => {
             setEditingCompra(compra);
             setIsCompraFormOpen(true);
         } catch(e) {
-             alert('Error al cargar compra');
+            alerts.error('Error', 'No se pudo cargar la información de la compra');
         }
-        
     };
 
     const filteredProveedores = proveedores.filter(p => 

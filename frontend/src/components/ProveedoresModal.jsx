@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProveedorService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const ProveedoresModal = ({ onClose }) => {
     const [proveedores, setProveedores] = useState([]);
@@ -30,12 +31,13 @@ const ProveedoresModal = ({ onClose }) => {
                 await ProveedorService.update(editingId, formData);
             } else {
                 await ProveedorService.create(formData);
+                alerts.toast('success', 'Proveedor creado');
             }
             setFormData({ nombre: '', contacto: '', telefono: '', email: '' });
             setEditingId(null);
             fetchProveedores();
         } catch (error) {
-            alert('Error al guardar proveedor');
+            alerts.error('Error', 'No se pudo guardar el proveedor');
         }
     };
 
@@ -50,12 +52,14 @@ const ProveedoresModal = ({ onClose }) => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Seguro que desea eliminar este proveedor?')) return;
+        const result = await alerts.confirm('¿Eliminar proveedor?', '¿Estás seguro de que deseas eliminar este proveedor? Esta acción no se puede deshacer.');
+        if (!result.isConfirmed) return;
         try {
             await ProveedorService.delete(id);
+            alerts.toast('success', 'Proveedor eliminado');
             fetchProveedores();
         } catch (error) {
-            alert('Error al eliminar proveedor');
+            alerts.error('Error', 'No se pudo eliminar el proveedor. Es posible que tenga movimientos asociados.');
         }
     };
 

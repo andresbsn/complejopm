@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GastoService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const GastosPage = () => {
     const [gastos, setGastos] = useState([]);
@@ -9,7 +10,6 @@ const GastosPage = () => {
     // Form state
     const [descripcion, setDescripcion] = useState('');
     const [monto, setMonto] = useState('');
-    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchGastos();
@@ -29,29 +29,31 @@ const GastosPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         if (!descripcion || !monto) {
-            setError('Todos los campos son obligatorios');
+            alerts.warning('Datos incompletos', 'Debes completar la descripción y el monto.');
             return;
         }
 
         try {
             await GastoService.create({ descripcion, monto: parseFloat(monto) });
+            alerts.toast('success', 'Gasto registrado correctamente');
             setDescripcion('');
             setMonto('');
             fetchGastos();
         } catch (err) {
-            setError(err.response?.data?.error || 'Error al registrar el gasto');
+            alerts.error('Error', err.response?.data?.error || 'Error al registrar el gasto');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Eliminar este gasto?')) return;
+        const result = await alerts.confirm('¿Eliminar gasto?', '¿Estás seguro de que deseas eliminar este registro de gasto?');
+        if (!result.isConfirmed) return;
         try {
             await GastoService.delete(id);
+            alerts.toast('success', 'Gasto eliminado');
             fetchGastos();
         } catch (err) {
-            alert('Error al eliminar gasto');
+            alerts.error('Error', 'No se pudo eliminar el gasto');
         }
     };
 
@@ -61,11 +63,6 @@ const GastosPage = () => {
             
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold mb-4">Registrar Nuevo Gasto</h3>
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
-                )}
                 <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>

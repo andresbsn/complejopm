@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TurnoService, JugadorService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) => {
     const { cancha, slot: timeSlot } = slot;
@@ -87,9 +88,10 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                 monto_total: formData.monto_total,
                 es_fijo: formData.es_fijo
             });
+            alerts.toast('success', 'Reserva creada exitosamente');
             onSuccess();
         } catch (error) {
-            alert('Error al crear reserva: ' + (error.response?.data?.error || error.message));
+            alerts.error('Error', 'No se pudo crear la reserva: ' + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }

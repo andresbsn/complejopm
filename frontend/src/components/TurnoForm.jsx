@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TurnoService, CanchaService, ConfiguracionService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const TurnoForm = ({ onTurnoCreated }) => {
   const [formData, setFormData] = useState({
@@ -62,12 +63,12 @@ const TurnoForm = ({ onTurnoCreated }) => {
     e.preventDefault();
     try {
       await TurnoService.create(formData);
-      alert('Turno creado exitosamente');
+      alerts.success('¡Éxito!', 'Turno creado exitosamente');
       if (onTurnoCreated) onTurnoCreated();
       // Reset form or close modal
     } catch (error) {
       console.error('Error al crear turno:', error);
-      alert('Error al crear el turno');
+      alerts.error('Error', error.response?.data?.error || 'No se pudo crear el turno');
     }
   };
 

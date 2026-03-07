@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CompraService, ProductoService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }) => {
     const [proveedorId, setProveedorId] = useState(initialData?.proveedor_id || '');
@@ -13,7 +14,6 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
         costo_unitario: i.costo_unitario
     })) || []);
     const [productos, setProductos] = useState([]);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchProductos();
@@ -64,8 +64,8 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!proveedorId) return setError('Seleccione un proveedor');
-        if (items.length === 0) return setError('Agregue al menos un producto');
+        if (!proveedorId) return alerts.warning('Datos faltantes', 'Seleccione un proveedor');
+        if (items.length === 0) return alerts.warning('Datos faltantes', 'Agregue al menos un producto');
 
         const compraData = {
             proveedor_id: proveedorId,
@@ -83,9 +83,10 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
             } else {
                 await CompraService.create(compraData);
             }
+            alerts.toast('success', 'Compra guardada exitosamente');
             onCompraSaved();
         } catch (err) {
-            setError('Error al guardar compra');
+            alerts.error('Error', 'No se pudo guardar la compra');
             console.error(err);
         }
     };
@@ -93,7 +94,6 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
     return (
         <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-bold mb-4">{initialData ? 'Editar Compra' : 'Nueva Compra'}</h3>
-            {error && <div className="text-red-500 mb-4">{error}</div>}
             
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -182,12 +182,14 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
                              <button 
                                 type="button" 
                                 onClick={async () => {
-                                    if(!window.confirm('¿Confirmar que recibió la mercadería? Esto actualizará el stock y costos.')) return;
+                                    const result = await alerts.confirm('¿Confirmar recepción?', '¿Está seguro de que recibió la mercadería? Esto actualizará el stock y los costos de los productos de forma permanente.');
+                                    if(!result.isConfirmed) return;
                                     try {
                                         await CompraService.confirmar(initialData.id);
+                                        alerts.toast('success', 'Stock y costos actualizados');
                                         onCompraSaved();
                                     } catch(e) {
-                                        alert('Error al confirmar stock: ' + e.message);
+                                        alerts.error('Error', 'No se pudo confirmar la mercadería: ' + (e.response?.data?.error || e.message));
                                     }
                                 }} 
                                 className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"

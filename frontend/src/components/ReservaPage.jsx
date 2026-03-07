@@ -5,6 +5,7 @@ import PagoModal from './PagoModal';
 import ReservaModal from './ReservaModal';
 import CanchaForm from './CanchaForm';
 import { useAuth } from '../context/AuthContext';
+import { alerts } from '../utils/alerts';
 
 const ReservaPage = ({ type }) => {
     // type: 'PADEL' or 'FUTBOL' (or whatever matches database 'tipo' and config keys)
@@ -119,13 +120,16 @@ const ReservaPage = ({ type }) => {
     };
 
     const handleCanchaDeleted = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar esta cancha?')) return;
+        const result = await alerts.confirm('¿Eliminar cancha?', '¿Estás seguro de que deseas eliminar esta cancha y todos sus turnos asociados?');
+        if (!result.isConfirmed) return;
+
         try {
             await CanchaService.delete(id);
+            alerts.toast('success', 'Cancha eliminada');
             fetchData();
         } catch (error) {
             console.error('Error deleting cancha:', error);
-            alert('Error al eliminar cancha');
+            alerts.error('Error', 'No se pudo eliminar la cancha');
         }
     };
 

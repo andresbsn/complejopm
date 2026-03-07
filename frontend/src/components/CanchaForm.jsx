@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { CanchaService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
     const [nombre, setNombre] = useState('');
     const [tipo, setTipo] = useState(defaultType.toLowerCase());
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     // Update tipo if defaultType changes
     useEffect(() => {
@@ -17,7 +17,6 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError(null);
 
         try {
             await CanchaService.create({ 
@@ -26,10 +25,10 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
             });
 
             setNombre('');
+            alerts.toast('success', `Cancha "${nombre}" creada exitosamente`);
             if (onCanchaAdded) onCanchaAdded();
-            // alert('Cancha creada exitosamente'); // Removed alert, let parent handle or just close
         } catch (err) {
-            setError(err.response?.data?.error || err.message);
+            alerts.error('Error', err.response?.data?.error || 'No se pudo crear la cancha');
         } finally {
             setLoading(false);
         }
@@ -38,7 +37,6 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
     return (
         <div className="p-1">
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Agregar Nueva Cancha</h3>
-            {error && <div className="mb-4 p-4 rounded-md bg-red-50 text-red-700">{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="nombre">

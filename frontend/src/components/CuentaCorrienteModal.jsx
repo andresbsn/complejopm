@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CuentaService, VentaService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const CuentaCorrienteModal = ({ jugador, onClose }) => {
     const [movimientos, setMovimientos] = useState([]);
@@ -56,9 +57,10 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
             setShowForm(false);
             setMonto('');
             setDescripcion('');
+            alerts.toast('success', 'Movimiento registrado');
             fetchCuenta(); 
         } catch (error) {
-            alert('Error al registrar movimiento');
+            alerts.error('Error', 'No se pudo registrar el movimiento');
         }
     };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductoList from './ProductoList';
 import ProductoForm from './ProductoForm';
 import { ProductoService, ProveedorService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const ProductosPage = () => {
     // Data State
@@ -49,19 +50,21 @@ const ProductosPage = () => {
         if (!producto) return;
         
         const nuevoEstado = producto.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-        const accion = nuevoEstado === 'INACTIVO' ? 'inactivar' : 'reactivar';
+        const accionTerm = nuevoEstado === 'INACTIVO' ? 'inactivar' : 'reactivar';
+        const tituloAction = nuevoEstado === 'INACTIVO' ? 'Inactivar' : 'Reactivar';
         
-        if (!window.confirm(`¿Estás seguro de ${accion} este producto?`)) return;
+        const result = await alerts.confirm(`¿${tituloAction} producto?`, `¿Estás seguro de que deseas ${accionTerm} el producto "${producto.nombre}"?`);
+        if (!result.isConfirmed) return;
         
         try {
-            // Update product to toggle estado
             await ProductoService.update(id, {
                 ...producto,
                 estado: nuevoEstado
             });
             fetchData();
+            alerts.toast('success', `Producto ${nuevoEstado === 'ACTIVO' ? 'reactivado' : 'inactivado'}`);
         } catch (error) {
-            alert(`Error al ${accion}: ` + error.message);
+            alerts.error('Error', `Error al ${accionTerm}: ` + error.message);
         }
     };
 

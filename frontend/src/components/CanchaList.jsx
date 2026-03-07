@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanchaService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const CanchaList = () => {
     const [canchas, setCanchas] = useState([]);
@@ -22,15 +23,15 @@ const CanchaList = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar esta cancha?')) return;
+        const result = await alerts.confirm('¿Eliminar cancha?', '¿Estás seguro de eliminar esta cancha?');
+        if (!result.isConfirmed) return;
 
         try {
-            // Check if CanchaService.delete exists, otherwise I'll need to add it to api.js first.
-            // Assuming I will add it or it exists.
             await CanchaService.delete(id); 
             fetchCanchas(); // Recargar la lista
+            alerts.toast('success', 'Cancha eliminada');
         } catch (err) {
-            alert(err.response?.data?.error || err.message);
+            alerts.error('Error', err.response?.data?.error || err.message);
         }
     };
 

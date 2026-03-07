@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CajaService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
+import { alerts } from '../utils/alerts';
 
 const CajaPage = () => {
     const { user } = useAuth();
@@ -11,8 +12,6 @@ const CajaPage = () => {
     const [loading, setLoading] = useState(true);
     const [saldoInicial, setSaldoInicial] = useState('');
     const [saldoFinalReal, setSaldoFinalReal] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [tab, setTab] = useState('actual'); // 'actual', 'historial'
     const [historial, setHistorial] = useState([]);
     
@@ -57,7 +56,7 @@ const CajaPage = () => {
             setHistorial(data);
         } catch (err) {
             console.error(err);
-            setError('Error al cargar historial');
+            alerts.error('Error', 'Error al cargar historial');
         }
     };
 
@@ -65,32 +64,33 @@ const CajaPage = () => {
         e.preventDefault();
         try {
             await CajaService.abrir(parseFloat(saldoInicial));
-            setSuccess('Caja abierta correctamente');
+            alerts.success('¡Éxito!', 'Caja abierta correctamente');
             setSaldoInicial('');
             fetchEstado();
         } catch (err) {
-            setError(err.response?.data?.error || 'Error al abrir caja');
+            alerts.error('Error', err.response?.data?.error || 'Error al abrir caja');
         }
     };
 
     const handleCerrar = async (e) => {
         e.preventDefault();
         if (!caja) return;
+        
+        const saldoCalculado = calcularSaldoActual();
+        const final = saldoFinalReal ? parseFloat(saldoFinalReal) : saldoCalculado;
+        
+        const result = await alerts.confirm('¿Cerrar caja?', '¿Estás seguro de que deseas cerrar la caja ahora?');
+        if (!result.isConfirmed) return;
+
         try {
-            // Calculate system balance
-            const saldoCalculado = calcularSaldoActual();
-            // If user didn't input real balance, assume it matches or require it?
-            // Let's require it or default to calculated.
-            const final = saldoFinalReal ? parseFloat(saldoFinalReal) : saldoCalculado;
-            
             await CajaService.cerrar(caja.id, final);
-            setSuccess('Caja cerrada correctamente');
+            alerts.success('¡Éxito!', 'Caja cerrada correctamente');
             setCaja(null);
             setMovimientos([]);
             setSaldoFinalReal('');
             fetchEstado(); // Will return null
         } catch (err) {
-             setError(err.response?.data?.error || 'Error al cerrar caja');
+             alerts.error('Error', err.response?.data?.error || 'Error al cerrar caja');
         }
     };
 
@@ -189,8 +189,7 @@ const CajaPage = () => {
                 </div>
             </div>
 
-            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{error}</div>}
-            {success && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{success}</div>}
+            {/* Legacy alert blocks removed - now using SweetAlert2 */}
 
             {tab === 'actual' && (
                 <>
@@ -359,7 +358,8 @@ const CajaPage = () => {
                                                     <div className="flex justify-between items-start mb-2">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                             mov.tipo_movimiento === 'VENTA' ? 'bg-green-100 text-green-800' : 
-                                                            mov.tipo_movimiento === 'PAGO_TURNO' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                                                            mov.tipo_movimiento === 'PAGO_TURNO' ? 'bg-blue-100 text-blue-800' : 
+                                                            mov.tipo_movimiento === 'INSCRIPCION' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'
                                                         }`}>
                                                             {mov.tipo_movimiento}
                                                         </span>
@@ -411,7 +411,8 @@ const CajaPage = () => {
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                                     mov.tipo_movimiento === 'VENTA' ? 'bg-green-100 text-green-800' : 
-                                                                    mov.tipo_movimiento === 'PAGO_TURNO' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                                                                    mov.tipo_movimiento === 'PAGO_TURNO' ? 'bg-blue-100 text-blue-800' : 
+                                                                    mov.tipo_movimiento === 'INSCRIPCION' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'
                                                                 }`}>
                                                                     {mov.tipo_movimiento}
                                                                 </span>
@@ -555,10 +556,11 @@ const CajaPage = () => {
                             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div className="sm:flex sm:items-start">
                                     <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
-                                        selectedMov.tipo_movimiento === 'VENTA' ? 'bg-green-100' : 'bg-blue-100'
+                                        selectedMov.tipo_movimiento === 'VENTA' ? 'bg-green-100' : 
+                                        selectedMov.tipo_movimiento === 'INSCRIPCION' ? 'bg-indigo-100' : 'bg-blue-100'
                                     }`}>
                                         <span className="text-xl">
-                                            {selectedMov.tipo_movimiento === 'VENTA' ? '🍕' : '🎾'}
+                                            {selectedMov.tipo_movimiento === 'VENTA' ? '🍕' : selectedMov.tipo_movimiento === 'INSCRIPCION' ? '🏆' : '🎾'}
                                         </span>
                                     </div>
                                     <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
@@ -577,6 +579,12 @@ const CajaPage = () => {
                                                         <span className="font-semibold">Descripción:</span>
                                                         <span>{selectedMov.descripcion}</span>
                                                     </div>
+                                                    {selectedMov.cliente_nombre && (
+                                                        <div className="flex justify-between border-b pb-1">
+                                                            <span className="font-semibold">{selectedMov.tipo_movimiento === 'INSCRIPCION' || selectedMov.tipo_movimiento === 'INGRESO_CUENTA' ? 'Jugador:' : 'Cliente:'}</span>
+                                                            <span className="font-medium text-indigo-700">{selectedMov.cliente_nombre}</span>
+                                                        </div>
+                                                    )}
                                                     <div className="flex justify-between border-b pb-1">
                                                         <span className="font-semibold">Método de Pago:</span>
                                                         <span className="capitalize">{selectedMov.metodo_pago}</span>

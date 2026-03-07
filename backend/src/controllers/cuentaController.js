@@ -21,12 +21,7 @@ const cuentaController = {
                 return res.status(400).json({ error: 'Faltan datos requeridos' });
             }
 
-            let caja_id = null;
-            if (tipo === 'HABER') {
-                const CajaModel = require('../models/CajaModel');
-                const caja = await CajaModel.getAbierta();
-                if (caja) caja_id = caja.id;
-            }
+            let caja_id = req.caja ? req.caja.id : null;
 
             const nuevoMovimiento = await CuentaModel.addMovimiento({
                 jugador_id,

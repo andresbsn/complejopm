@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { JugadorService, CategoriaService } from '../services/api';
 import CuentaCorrienteModal from './CuentaCorrienteModal';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const JugadoresPage = () => {
     const [jugadores, setJugadores] = useState([]);
@@ -76,8 +77,9 @@ const JugadoresPage = () => {
             setIsEditing(false);
             setCurrentJugadorId(null);
             fetchJugadores(searchTerm);
+            alerts.toast('success', isEditing ? 'Jugador actualizado' : 'Jugador creado');
         } catch (error) {
-            alert(isEditing ? 'Error al actualizar jugador' : 'Error al crear jugador');
+            alerts.error('Error', isEditing ? 'Error al actualizar jugador' : 'Error al crear jugador');
         } finally {
             setCreating(false);
         }

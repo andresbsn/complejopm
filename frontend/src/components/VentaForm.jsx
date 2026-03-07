@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProductoService, VentaService, JugadorService } from '../services/api';
 import SearchableSelect from './SearchableSelect';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const VentaForm = ({ onVentaCreated }) => {
     const [productos, setProductos] = useState([]);
@@ -49,7 +50,7 @@ const VentaForm = ({ onVentaCreated }) => {
         
         if (itemExistente) {
             if (producto.stock < itemExistente.cantidad + 1) {
-                alert('No hay suficiente stock');
+                alerts.warning('Stock insuficiente', 'No hay suficiente stock de este producto.');
                 return;
             }
             setCarrito(carrito.map(item => 
@@ -74,7 +75,7 @@ const VentaForm = ({ onVentaCreated }) => {
         if (!producto) return;
 
         if (producto.stock < nuevaCantidad) {
-            alert('No hay suficiente stock');
+            alerts.warning('Stock insuficiente', 'No hay suficiente stock de este producto.');
             return;
         }
 
@@ -137,14 +138,14 @@ const VentaForm = ({ onVentaCreated }) => {
         
         // Allow small floating point diffs
         if (Math.abs(sumaPagos - total) > 0.01) {
-            alert(`El total de pagos ($${sumaPagos}) no coincide con el total de la venta ($${total})`);
+            alerts.warning('Error en montos', `El total de pagos ($${sumaPagos}) no coincide con el total de la venta ($${total})`);
             return;
         }
 
         // Validate account details
         for (const p of pagos) {
             if (p.metodo === 'cuenta_corriente' && !p.jugador) {
-                 alert('Debe seleccionar un jugador para los pagos con Cuenta Corriente');
+                 alerts.warning('Faltan datos', 'Debe seleccionar un jugador para los pagos con Cuenta Corriente');
                  return;
             }
         }
@@ -163,16 +164,15 @@ const VentaForm = ({ onVentaCreated }) => {
             };
             
             await VentaService.create(ventaData);
-            setMensaje({ type: 'success', text: 'Venta realizada con éxito' });
+            alerts.success('¡Éxito!', 'Venta realizada con éxito');
             setCarrito([]);
             setPagos([{ metodo: 'efectivo', monto: 0 }]); // Reset
             setObservaciones('');
             cargarProductos(); // Recargar para actualizar stock
             if (onVentaCreated) onVentaCreated();
-            setTimeout(() => setMensaje(null), 3000);
         } catch (error) {
             console.error('Error al realizar venta:', error);
-            setMensaje({ type: 'error', text: 'Error al realizar la venta: ' + (error.response?.data?.error || error.message) });
+            alerts.error('Error', 'No se pudo realizar la venta: ' + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }

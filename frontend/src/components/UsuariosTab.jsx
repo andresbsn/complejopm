@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const UsuariosTab = () => {
     const [users, setUsers] = useState([]);
@@ -38,21 +39,23 @@ const UsuariosTab = () => {
             setRol('user');
             // Reload list
             fetchUsers();
-            alert('Usuario creado exitosamente');
+            alerts.success('Usuario creado', 'El nuevo usuario ha sido registrado exitosamente.');
         } catch (error) {
             console.error('Error creating user:', error);
-            alert('Error al crear usuario: ' + (error.response?.data?.error || error.message));
+            alerts.error('Error', 'No se pudo crear el usuario: ' + (error.response?.data?.error || error.message));
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Está seguro de eliminar este usuario?')) {
+        const result = await alerts.confirm('¿Eliminar usuario?', '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.');
+        if (result.isConfirmed) {
             try {
                 await UserService.delete(id);
+                alerts.toast('success', 'Usuario eliminado');
                 fetchUsers();
             } catch (error) {
                 console.error('Error deleting user:', error);
-                alert('Error al eliminar usuario');
+                alerts.error('Error', 'No se pudo eliminar el usuario');
             }
         }
     };

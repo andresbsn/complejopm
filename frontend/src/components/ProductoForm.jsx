@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductoService, ProveedorService } from '../services/api';
+import { alerts } from '../utils/alerts';
 
 const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
     const [nombre, setNombre] = useState('');
@@ -13,7 +14,6 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
     
     const [proveedores, setProveedores] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchProveedores();
@@ -52,13 +52,11 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
         setStockMinimo('');
         setProveedorId('');
         setEstado('ACTIVO');
-        setError(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError(null);
 
         try {
             const data = { 
@@ -80,9 +78,9 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
 
             resetForm();
             if (onSuccess) onSuccess();
-            alert(productToEdit ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
+            alerts.toast('success', productToEdit ? 'Producto actualizado' : 'Producto creado');
         } catch (err) {
-            setError(err.message || 'Error al guardar el producto');
+            alerts.error('Error', err.message || 'No se pudo guardar el producto');
         } finally {
             setLoading(false);
         }
@@ -103,8 +101,6 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                     </button>
                 )}
             </div>
-            
-            {error && <div className="mb-4 p-4 rounded-md bg-red-50 text-red-700">{error}</div>}
             
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

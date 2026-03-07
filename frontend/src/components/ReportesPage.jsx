@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const ReportesPage = () => {
     const { user } = useAuth();
@@ -74,6 +75,7 @@ const ReportesPage = () => {
             setCategorias(data);
         } catch (error) {
             console.error('Error fetching categories:', error);
+            alerts.error('Error', 'No se pudieron cargar las categorías');
         }
     };
 
@@ -115,6 +117,7 @@ const ReportesPage = () => {
             }
         } catch (error) {
             console.error('Error fetching report:', error);
+            alerts.error('Error', 'No se pudo cargar el reporte: ' + (error.response?.data?.error || error.message));
         } finally {
             setLoading(false);
         }
@@ -209,7 +212,10 @@ const ReportesPage = () => {
                 setCajaMovimientos(filteredMovs);
                 calculateStats(filteredMovs, caja); // Pass caja explicitly to avoid stale state
             })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error(err);
+                alerts.error('Error', 'No se pudieron cargar los movimientos de la caja');
+            })
             .finally(() => setLoading(false));
     };
 
@@ -228,6 +234,7 @@ const ReportesPage = () => {
                 setMovDetail(data);
             } catch (err) {
                 console.error(err);
+                alerts.error('Error', 'No se pudieron cargar los detalles de la venta');
             } finally {
                 setLoadingDetail(false);
             }
@@ -240,7 +247,8 @@ const ReportesPage = () => {
         fetchReport(); 
     };
 
-    const exportPDF = () => {
+    const exportPDF = async () => {
+        alerts.toast('info', 'Generando PDF...');
         const doc = new jsPDF();
         
         doc.setFontSize(18);
@@ -338,6 +346,7 @@ const ReportesPage = () => {
         }
 
         doc.save(`reporte_${activeTab}_${new Date().toISOString().slice(0,10)}.pdf`);
+        alerts.toast('success', 'PDF generado exitosamente');
     };
 
     // Updated tabs list

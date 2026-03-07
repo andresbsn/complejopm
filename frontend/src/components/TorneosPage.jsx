@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TorneoService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const TorneosPage = () => {
     const [torneos, setTorneos] = useState([]);
@@ -38,8 +39,9 @@ const TorneosPage = () => {
             setIsModalOpen(false);
             setNewTorneo({ descripcion: '', fecha_inicio: '', costo_inscripcion: '' });
             fetchTorneos();
+            alerts.toast('success', 'Torneo creado exitosamente');
         } catch (error) {
-            alert('Error al crear torneo');
+            alerts.error('Error', 'No se pudo crear el torneo');
         } finally {
             setCreating(false);
         }

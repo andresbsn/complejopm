@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { VentaService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
+import { alerts } from '../utils/alerts';
 
 const VentaList = ({ refreshTrigger }) => {
     const [ventas, setVentas] = useState([]);
@@ -122,13 +123,14 @@ const VentaList = ({ refreshTrigger }) => {
                                     {!venta.observaciones?.includes('Nota de Crédito') && (
                                         <button 
                                             onClick={async () => {
-                                                if(window.confirm('¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.')) {
+                                                const result = await alerts.confirm('¿Anular venta?', '¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.');
+                                                if (result.isConfirmed) {
                                                     try {
                                                         await VentaService.generarNotaCredito(venta.id);
-                                                        alert('Nota de crédito generada con éxito');
+                                                        alerts.success('¡Anulado!', 'Nota de crédito generada con éxito');
                                                         cargarVentas();
                                                     } catch (err) {
-                                                        alert('Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
+                                                        alerts.error('Error', 'Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
                                                     }
                                                 }
                                             }}
@@ -172,13 +174,14 @@ const VentaList = ({ refreshTrigger }) => {
                                         {!venta.observaciones?.includes('Nota de Crédito') && (
                                             <button 
                                                 onClick={async () => {
-                                                    if(window.confirm('¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.')) {
+                                                    const result = await alerts.confirm('¿Anular venta?', '¿Está seguro de generar una nota de crédito para anular esta venta? Esto devolverá el stock e impactará en la caja.');
+                                                    if (result.isConfirmed) {
                                                         try {
                                                             await VentaService.generarNotaCredito(venta.id);
-                                                            alert('Nota de crédito generada con éxito');
+                                                            alerts.success('¡Anulado!', 'Nota de crédito generada con éxito');
                                                             cargarVentas();
                                                         } catch (err) {
-                                                            alert('Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
+                                                            alerts.error('Error', 'Error al generar la nota de crédito: ' + (err.response?.data?.error || err.message));
                                                         }
                                                     }
                                                 }}
