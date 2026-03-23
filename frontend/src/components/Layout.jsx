@@ -9,6 +9,16 @@ const Layout = ({ children }) => {
   const { user, logout } = useAuth();
   const isAdmin = user?.rol === 'admin';
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Close mobile menu when route changes
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -20,6 +30,10 @@ const Layout = ({ children }) => {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
   const allNavItems = [
@@ -143,6 +157,12 @@ const Layout = ({ children }) => {
             </h1>
           </div>
           <div className="flex items-center space-x-2 lg:space-x-4">
+            <div className="hidden sm:flex items-center px-3 py-1 bg-gray-50 rounded-full border border-gray-100">
+              <span className="text-gray-400 mr-2">🕒</span>
+              <span className="text-sm font-medium text-gray-600 tabular-nums">
+                {formatTime(currentTime)}
+              </span>
+            </div>
             <button className="p-2 text-gray-400 hover:text-gray-600">
               🔔
             </button>
