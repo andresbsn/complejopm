@@ -81,161 +81,197 @@ const CuentaProveedorModal = ({ proveedor, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-            <div className="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">
-                        Cuenta Corriente: {proveedor.nombre}
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="relative mx-auto w-full max-w-4xl shadow-2xl rounded-xl bg-white max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white flex-shrink-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate pr-4">
+                        Cuenta Corriente: <span className="text-indigo-600">{proveedor.nombre}</span>
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500 text-2xl">✕</button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                {/* Saldo y Acciones */}
-                <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-6">
-                    <div>
-                        <p className="text-sm text-gray-500">Monto Pendiente de Pago</p>
-                        <p className={`text-3xl font-bold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            ${formatCurrency(saldo)}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                            {saldo > 0 ? '(Debemos al proveedor)' : '(Saldo a favor / Saldado)'}
-                        </p>
-                    </div>
-                    <div className="space-x-4">
-                        <button 
-                            onClick={() => { setTipoMovimiento('DEBE'); setShowForm(true); }}
-                            className="bg-red-100 text-red-700 px-4 py-2 rounded-md hover:bg-red-200 font-medium"
-                        >
-                            + Registrar Compra
-                        </button>
-                        <button 
-                            onClick={() => { setTipoMovimiento('HABER'); setShowForm(true); }}
-                            className="bg-green-100 text-green-700 px-4 py-2 rounded-md hover:bg-green-200 font-medium"
-                        >
-                            + Registrar Pago
-                        </button>
-                    </div>
-                </div>
-
-                {/* Formulario de Transacción */}
-                {showForm && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-                        <h4 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-3">
-                            {tipoMovimiento === 'DEBE' ? 'Registrar Nueva Compra / Deuda' : 'Registrar Nuevo Pago al Proveedor'}
-                        </h4>
-                        <form onSubmit={handleTransaction} className="flex gap-4 items-end">
-                            <div className="flex-1">
-                                <label className="block text-xs font-medium text-gray-700">Monto</label>
-                                <input 
-                                    type="number" step="0.01" min="0" required 
-                                    value={monto} 
-                                    onChange={(e) => setMonto(e.target.value)}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md p-2" 
-                                    placeholder="0.00"
-                                />
+                <div className="overflow-y-auto flex-grow p-4 sm:p-6 bg-gray-50">
+                    {/* Saldo y Acciones */}
+                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Monto Pendiente de Pago</p>
+                                <p className={`text-3xl sm:text-4xl font-black ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                    ${formatCurrency(saldo)}
+                                </p>
+                                <p className="text-xs font-medium text-gray-500 mt-1">
+                                    {saldo > 0 ? '🔴 Debemos al proveedor' : '🟢 Saldo a favor / Saldado'}
+                                </p>
                             </div>
-                            
-                            {tipoMovimiento === 'HABER' && (
-                                <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-700">Método de Pago</label>
-                                    <select
-                                        value={metodoPago}
-                                        onChange={(e) => setMetodoPago(e.target.value)}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                                    >
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="transferencia">Transferencia</option>
-                                        <option value="cheque">Cheque</option>
-                                        <option value="otro">Otro</option>
-                                    </select>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                <button 
+                                    onClick={() => { setTipoMovimiento('DEBE'); setShowForm(true); }}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-lg hover:bg-red-100 font-bold transition-all border border-red-100"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                    </svg>
+                                    Compra
+                                </button>
+                                <button 
+                                    onClick={() => { setTipoMovimiento('HABER'); setShowForm(true); }}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-green-50 text-green-700 px-4 py-2.5 rounded-lg hover:bg-green-100 font-bold transition-all border border-green-100"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                    </svg>
+                                    Pago Realizado
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Formulario de Transacción */}
+                    {showForm && (
+                         <div className="bg-white border-2 border-indigo-100 rounded-xl p-4 sm:p-6 mb-6 shadow-md animate-in slide-in-from-top duration-200">
+                            <h4 className="text-sm font-bold uppercase tracking-wide text-indigo-600 mb-4 flex items-center gap-2">
+                                {tipoMovimiento === 'DEBE' ? (
+                                    <>
+                                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                        Registrar Nueva Compra / Deuda
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                        Registrar Nuevo Pago al Proveedor
+                                    </>
+                                )}
+                            </h4>
+                            <form onSubmit={handleTransaction} className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Monto</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2 text-gray-400">$</span>
+                                            <input 
+                                                type="number" step="0.01" min="0" required 
+                                                value={monto} 
+                                                onChange={(e) => setMonto(e.target.value)}
+                                                className="block w-full border border-gray-300 rounded-lg py-2 pl-7 pr-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" 
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {tipoMovimiento === 'HABER' && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Método de Pago</label>
+                                            <select
+                                                value={metodoPago}
+                                                onChange={(e) => setMetodoPago(e.target.value)}
+                                                className="block w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            >
+                                                <option value="efectivo">Efectivo 💵</option>
+                                                <option value="transferencia">Transferencia 📱</option>
+                                                <option value="cheque">Cheque 🎫</option>
+                                                <option value="otro">Otro</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className={`${tipoMovimiento === 'HABER' ? 'sm:col-span-2 md:col-span-1' : 'sm:col-span-1 md:col-span-2'}`}>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
+                                        <input 
+                                            type="text" 
+                                            value={descripcion} 
+                                            onChange={(e) => setDescripcion(e.target.value)}
+                                            className="block w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" 
+                                            placeholder={tipoMovimiento === 'DEBE' ? 'Ej: Factura Nº 1234' : 'Opcional...'}
+                                        />
+                                    </div>
                                 </div>
-                            )}
+                                <div className="flex gap-3 justify-end pt-2">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowForm(false)}
+                                        className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className={`px-6 py-2 rounded-lg text-white font-bold shadow-sm transition-all ${
+                                            tipoMovimiento === 'DEBE' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                    >
+                                        Guardar Movimiento
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
 
-                            <div className="flex-[2]">
-                                <label className="block text-xs font-medium text-gray-700">Descripción (Opcional)</label>
-                                <input 
-                                    type="text" 
-                                    value={descripcion} 
-                                    onChange={(e) => setDescripcion(e.target.value)}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md p-2" 
-                                    placeholder={tipoMovimiento === 'DEBE' ? 'Ej: Factura Nº 1234' : 'Comentarios...'}
-                                />
+                    {/* Lista de Movimientos */}
+                    <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center mb-2 px-1">
+                            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Movimientos Recientes</h4>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
+                                <p className="text-gray-500 font-medium">Cargando movimientos...</p>
                             </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    type="button" 
-                                    onClick={() => setShowForm(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    type="submit" 
-                                    className={`px-4 py-2 rounded-md text-white ${
-                                        tipoMovimiento === 'DEBE' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-                                    }`}
-                                >
-                                    Guardar
-                                </button>
+                        ) : movimientos.length === 0 ? (
+                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                <p className="text-gray-400">No se encontraron movimientos registrados.</p>
                             </div>
-                        </form>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-3">
+                                {movimientos.map((mov) => (
+                                    <div key={mov.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">
+                                                        {new Date(mov.fecha).toLocaleDateString()} - {new Date(mov.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-gray-800">
+                                                        {mov.descripcion || 'Sin descripción'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`text-lg font-black leading-none ${
+                                                        mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
+                                                    }`}>
+                                                        ${formatCurrency(mov.monto)}
+                                                    </p>
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mt-1 ${
+                                                        mov.tipo === 'DEBE' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                                                    }`}>
+                                                        {mov.tipo === 'DEBE' ? 'Compra' : 'Pago'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
-
-                {/* Tabla de Movimientos */}
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg max-h-96 overflow-y-auto">
-                    <table className="min-w-full divide-y divide-gray-300">
-                        <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha</th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
-                                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
-                            {loading ? (
-                                <tr><td colSpan="4" className="text-center py-4">Cargando...</td></tr>
-                            ) : movimientos.length === 0 ? (
-                                <tr><td colSpan="4" className="text-center py-4 text-gray-500">Sin movimientos registrados.</td></tr>
-                            ) : (
-                                movimientos.map((mov) => (
-                                    <tr key={mov.id}>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            {new Date(mov.fecha).toLocaleString()}
-                                        </td>
-                                        <td className="px-3 py-4 text-sm text-gray-500">
-                                            {mov.descripcion || '-'}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                            <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                                mov.tipo === 'DEBE' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                            }`}>
-                                                {mov.tipo === 'DEBE' ? 'COMPRA' : 'PAGO'}
-                                            </span>
-                                        </td>
-                                        <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
-                                            mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
-                                        }`}>
-                                            ${formatCurrency(mov.monto)}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
                 </div>
 
-                <div className="mt-6 text-right">
+                <div className="p-4 bg-gray-50 border-t flex-shrink-0 flex justify-end">
                     <button 
                         onClick={onClose}
-                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+                        className="w-full sm:w-auto bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-gray-900 transition-all shadow-md active:scale-95"
                     >
-                        Cerrar
+                        Cerrar Cuenta
                     </button>
                 </div>
             </div>
         </div>
+
     );
 };
 

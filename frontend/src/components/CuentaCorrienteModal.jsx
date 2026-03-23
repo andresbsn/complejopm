@@ -103,225 +103,278 @@ const CuentaCorrienteModal = ({ jugador, onClose }) => {
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-            <div className="relative mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] flex flex-col">
-                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                    <h3 className="text-xl font-bold text-gray-900">
-                        Cuenta Corriente: {jugador.nombre}
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="relative mx-auto w-full max-w-4xl shadow-2xl rounded-xl bg-white max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="flex justify-between items-center p-4 sm:p-6 border-b bg-white flex-shrink-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate pr-4">
+                        Cuenta Corriente: <span className="text-indigo-600">{jugador.nombre}</span>
                     </h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500 text-2xl">✕</button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                <div className="overflow-y-auto flex-grow pr-2">
+                <div className="overflow-y-auto flex-grow p-4 sm:p-6 bg-gray-50">
                     {/* Saldo y Acciones */}
-                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mb-6">
-                        <div>
-                            <p className="text-sm text-gray-500">Saldo Actual</p>
-                            <p className={`text-3xl font-bold ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                ${formatCurrency(saldo)}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                                {saldo > 0 ? '(Debe dinero)' : '(A favor/Saldado)'}
-                            </p>
-                        </div>
-                        <div className="space-x-4">
-                            <button 
-                                onClick={() => { setTipoMovimiento('DEBE'); setShowForm(true); }}
-                                className="bg-red-100 text-red-700 px-4 py-2 rounded-md hover:bg-red-200 font-medium"
-                            >
-                                + Registrar Deuda
-                            </button>
-                            <button 
-                                onClick={() => { setTipoMovimiento('HABER'); setShowForm(true); }}
-                                className="bg-green-100 text-green-700 px-4 py-2 rounded-md hover:bg-green-200 font-medium"
-                            >
-                                + Registrar Pago
-                            </button>
+                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Saldo Actual</p>
+                                <p className={`text-3xl sm:text-4xl font-black ${saldo > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                    ${formatCurrency(saldo)}
+                                </p>
+                                <p className="text-xs font-medium text-gray-500 mt-1">
+                                    {saldo > 0 ? '🔴 Tenés una deuda pendiente' : '🟢 Saldo a favor / Al día'}
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                <button 
+                                    onClick={() => { setTipoMovimiento('DEBE'); setShowForm(true); }}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-lg hover:bg-red-100 font-bold transition-all border border-red-100"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                    </svg>
+                                    Deuda
+                                </button>
+                                <button 
+                                    onClick={() => { setTipoMovimiento('HABER'); setShowForm(true); }}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-green-50 text-green-700 px-4 py-2.5 rounded-lg hover:bg-green-100 font-bold transition-all border border-green-100"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                    </svg>
+                                    Pago
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {/* Formulario de Transacción */}
                     {showForm && (
-                         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
-                            <h4 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-3">
-                                {tipoMovimiento === 'DEBE' ? 'Registrar Nueva Deuda' : 'Registrar Nuevo Pago'}
-                            </h4>
-                            <form onSubmit={handleTransaction} className="flex gap-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-700">Monto</label>
-                                    <input 
-                                        type="number" step="0.01" min="0" required 
-                                        value={monto} 
-                                        onChange={(e) => setMonto(e.target.value)}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md p-2" 
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                                
-                                {tipoMovimiento === 'HABER' && (
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-medium text-gray-700">Método</label>
-                                        <select
-                                            value={metodoPago}
-                                            onChange={(e) => setMetodoPago(e.target.value)}
-                                            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                                        >
-                                            <option value="efectivo">Efectivo</option>
-                                            <option value="transferencia">Transferencia</option>
-                                            <option value="qr">QR</option>
-                                        </select>
-                                    </div>
+                         <div className="bg-white border-2 border-indigo-100 rounded-xl p-4 sm:p-6 mb-6 shadow-md animate-in slide-in-from-top duration-200">
+                            <h4 className="text-sm font-bold uppercase tracking-wide text-indigo-600 mb-4 flex items-center gap-2">
+                                {tipoMovimiento === 'DEBE' ? (
+                                    <>
+                                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                        Registrar Nueva Deuda
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                        Registrar Nuevo Pago
+                                    </>
                                 )}
+                            </h4>
+                            <form onSubmit={handleTransaction} className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Monto</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2 text-gray-400">$</span>
+                                            <input 
+                                                type="number" step="0.01" min="0" required 
+                                                value={monto} 
+                                                onChange={(e) => setMonto(e.target.value)}
+                                                className="block w-full border border-gray-300 rounded-lg py-2 pl-7 pr-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" 
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {tipoMovimiento === 'HABER' && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Método</label>
+                                            <select
+                                                value={metodoPago}
+                                                onChange={(e) => setMetodoPago(e.target.value)}
+                                                className="block w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                            >
+                                                <option value="efectivo">Efectivo 💵</option>
+                                                <option value="transferencia">Transferencia 📱</option>
+                                                <option value="qr">QR 📲</option>
+                                            </select>
+                                        </div>
+                                    )}
 
-                                <div className="flex-[2]">
-                                    <label className="block text-xs font-medium text-gray-700">Descripción (Opcional)</label>
-                                    <input 
-                                        type="text" 
-                                        value={descripcion} 
-                                        onChange={(e) => setDescripcion(e.target.value)}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md p-2" 
-                                        placeholder={tipoMovimiento === 'DEBE' ? 'Ej: Compra de gaseosa' : 'Comentarios adicionales...'}
-                                    />
+                                    <div className={`${tipoMovimiento === 'HABER' ? 'sm:col-span-2 md:col-span-1' : 'sm:col-span-1 md:col-span-2'}`}>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
+                                        <input 
+                                            type="text" 
+                                            value={descripcion} 
+                                            onChange={(e) => setDescripcion(e.target.value)}
+                                            className="block w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" 
+                                            placeholder={tipoMovimiento === 'DEBE' ? 'Ej: Compra de gaseosa' : 'Opcional...'}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-3 justify-end pt-2">
                                     <button 
                                         type="button" 
                                         onClick={() => setShowForm(false)}
-                                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                        className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
                                     >
                                         Cancelar
                                     </button>
                                     <button 
                                         type="submit" 
-                                        className={`px-4 py-2 rounded-md text-white ${
+                                        className={`px-6 py-2 rounded-lg text-white font-bold shadow-sm transition-all ${
                                             tipoMovimiento === 'DEBE' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
                                         }`}
                                     >
-                                        Guardar
+                                        Guardar Movimiento
                                     </button>
                                 </div>
                             </form>
                         </div>
                     )}
 
-                    {/* Tabla de Movimientos */}
-                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg mb-4">
-                        <table className="min-w-full divide-y divide-gray-300">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Fecha</th>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
-                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
-                                    <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Monto</th>
-                                    <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 bg-white">
-                                {loading ? (
-                                    <tr><td colSpan="5" className="text-center py-4">Cargando...</td></tr>
-                                ) : currentMovimientos.length === 0 ? (
-                                    <tr><td colSpan="5" className="text-center py-4 text-gray-500">Sin movimientos registrados.</td></tr>
-                                ) : (
-                                    currentMovimientos.map((mov) => (
-                                        <React.Fragment key={mov.id}>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {new Date(mov.fecha).toLocaleString()}
-                                                </td>
-                                                <td className="px-3 py-4 text-sm text-gray-500">
-                                                    {mov.descripcion || '-'}
-                                                    {mov.referencia_id && (
-                                                        <span className="ml-2 text-xs text-indigo-500 cursor-pointer hover:underline" onClick={() => toggleDetails(mov)}>
-                                                            {expandedMovimientoId === mov.id ? '(Ocultar Detalles)' : '(Ver Detalles)'}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                                    <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                                        mov.tipo === 'DEBE' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                    }`}>
-                                                        {mov.tipo}
+                    {/* Lista de Movimientos */}
+                    <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center mb-2 px-1">
+                            <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Movimientos Recientes</h4>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
+                                <p className="text-gray-500 font-medium">Cargando movimientos...</p>
+                            </div>
+                        ) : currentMovimientos.length === 0 ? (
+                            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                                <p className="text-gray-400">No se encontraron movimientos registrados.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-3">
+                                {currentMovimientos.map((mov) => (
+                                    <div key={mov.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">
+                                                        {new Date(mov.fecha).toLocaleDateString()} - {new Date(mov.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                     </span>
-                                                </td>
-                                                <td className={`whitespace-nowrap px-3 py-4 text-sm text-right font-medium ${
-                                                    mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
-                                                }`}>
-                                                    ${formatCurrency(mov.monto)}
-                                                </td>
-                                                <td className="px-3 py-4 text-right text-sm">
-                                                    {mov.referencia_id && (
-                                                        <button onClick={() => toggleDetails(mov)} className="text-gray-400 hover:text-indigo-600">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                            </svg>
-                                                        </button>
+                                                    <span className="text-sm font-bold text-gray-800">
+                                                        {mov.descripcion || 'Sin descripción'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`text-lg font-black leading-none ${
+                                                        mov.tipo === 'DEBE' ? 'text-red-600' : 'text-green-600'
+                                                    }`}>
+                                                        {mov.tipo === 'DEBE' ? '-' : '+'}${formatCurrency(mov.monto)}
+                                                    </p>
+                                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mt-1 ${
+                                                        mov.tipo === 'DEBE' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                                                    }`}>
+                                                        {mov.tipo === 'DEBE' ? 'Deuda' : 'Pago'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {mov.referencia_id && (
+                                                <button 
+                                                    onClick={() => toggleDetails(mov)}
+                                                    className="w-full mt-2 flex items-center justify-center gap-1 py-1.5 px-3 bg-gray-50 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 transition-colors border border-transparent hover:border-indigo-100"
+                                                >
+                                                    {expandedMovimientoId === mov.id ? (
+                                                        <>Ocultar detalles <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg></>
+                                                    ) : (
+                                                        <>Ver detalles de la venta <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></>
                                                     )}
-                                                </td>
-                                            </tr>
-                                            {expandedMovimientoId === mov.id && (
-                                                <tr className="bg-gray-50">
-                                                    <td colSpan="5" className="px-6 py-4">
-                                                        {loadingDetails && !detailsCache[mov.referencia_id] ? (
-                                                            <div className="text-sm text-gray-500">Cargando detalles...</div>
-                                                        ) : detailsCache[mov.referencia_id] ? (
-                                                            <div className="bg-white border rounded-md p-3 max-w-lg">
-                                                                <h5 className="text-xs font-bold text-gray-700 uppercase mb-2">Items de la Venta:</h5>
-                                                                <ul className="text-sm space-y-1">
-                                                                    {detailsCache[mov.referencia_id].map((detalle, idx) => (
-                                                                        <li key={idx} className="flex justify-between border-b last:border-0 border-gray-100 pb-1">
-                                                                            <span>{detalle.producto_nombre} <span className="text-gray-400">x{detalle.cantidad}</span></span>
-                                                                            <span>${formatCurrency(detalle.subtotal || (detalle.cantidad * detalle.precio_unitario))}</span>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-sm text-gray-500">No hay detalles disponibles.</div>
-                                                        )}
-                                                    </td>
-                                                </tr>
+                                                </button>
                                             )}
-                                        </React.Fragment>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+
+                                            {expandedMovimientoId === mov.id && (
+                                                <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100 animate-in fade-in duration-200">
+                                                    {loadingDetails && !detailsCache[mov.referencia_id] ? (
+                                                        <div className="flex items-center gap-2 text-xs text-gray-500 italic">
+                                                            <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                                            Cargando items...
+                                                        </div>
+                                                    ) : detailsCache[mov.referencia_id] ? (
+                                                        <div className="space-y-2">
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Items de la Venta</p>
+                                                            <ul className="divide-y divide-gray-200">
+                                                                {detailsCache[mov.referencia_id].map((detalle, idx) => (
+                                                                    <li key={idx} className="py-2 flex justify-between items-center text-sm">
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-semibold text-gray-700">{detalle.producto_nombre}</span>
+                                                                            <span className="text-xs text-gray-400">Cantidad: {detalle.cantidad}</span>
+                                                                        </div>
+                                                                        <span className="font-bold text-gray-800">
+                                                                            ${formatCurrency(detalle.subtotal || (detalle.cantidad * detalle.precio_unitario))}
+                                                                        </span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                            <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                                                                <span className="text-xs font-bold text-gray-500">TOTAL</span>
+                                                                <span className="text-sm font-black text-indigo-600">
+                                                                    ${formatCurrency(mov.monto)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-gray-500 italic">No hay detalles disponibles.</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
-                        <div className="flex justify-center items-center space-x-2 mb-4">
+                        <div className="flex justify-center items-center gap-1 pb-4">
                             <button
-                                onClick={() => paginate(currentPage - 1)}
+                                onClick={() => {
+                                    paginate(currentPage - 1);
+                                    document.querySelector('.overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Anterior
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
                             </button>
-                            <span className="text-sm text-gray-700">
-                                Página {currentPage} de {totalPages}
-                            </span>
+                            <div className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700">
+                                {currentPage} <span className="text-gray-400 font-normal mx-1">/</span> {totalPages}
+                            </div>
                             <button
-                                onClick={() => paginate(currentPage + 1)}
+                                onClick={() => {
+                                    paginate(currentPage + 1);
+                                    document.querySelector('.overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Siguiente
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
                             </button>
                         </div>
                     )}
                 </div>
 
-                <div className="mt-2 text-right pt-4 border-t flex-shrink-0">
+                <div className="p-4 bg-gray-50 border-t flex-shrink-0 flex justify-end">
                     <button 
                         onClick={onClose}
-                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+                        className="w-full sm:w-auto bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-gray-900 transition-all shadow-md active:scale-95"
                     >
-                        Cerrar
+                        Cerrar Cuenta
                     </button>
                 </div>
             </div>
         </div>
+
     );
 };
 
