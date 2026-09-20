@@ -7,6 +7,14 @@ import CanchaForm from './CanchaForm';
 import { useAuth } from '../context/AuthContext';
 import { alerts } from '../utils/alerts';
 
+const getLocalDate = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const ReservaPage = ({ type }) => {
     // type: 'PADEL' or 'FUTBOL' (or whatever matches database 'tipo' and config keys)
     
@@ -17,7 +25,7 @@ const ReservaPage = ({ type }) => {
     const [canchas, setCanchas] = useState([]);
     const [reservas, setReservas] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(getLocalDate);
     const [modalOpen, setModalOpen] = useState(false);
     const [pagoModalOpen, setPagoModalOpen] = useState(false);
     const [canchaModalOpen, setCanchaModalOpen] = useState(false);
