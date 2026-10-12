@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
+import PadelStatsSection from './PadelStatsSection';
 
 const ReportesPage = () => {
     const { user } = useAuth();
@@ -350,7 +351,7 @@ const ReportesPage = () => {
     };
 
     // Updated tabs list
-    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja'] : ['deudores', 'caja'];
+    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja', 'padel'] : ['deudores', 'caja', 'padel'];
 
     return (
         <div className="space-y-6">
@@ -369,13 +370,16 @@ const ReportesPage = () => {
                         >
                             {tab === 'ventas' ? 'Ingresos' : 
                              tab === 'jugadores' ? 'Jugadores' : 
-                             tab === 'caja' ? 'Caja' : 'Deudores'}
+                             tab === 'caja' ? 'Caja' :
+                             tab === 'padel' ? 'Pádel' : 'Deudores'}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="flex justify-end">
+            {activeTab === 'padel' && <PadelStatsSection />}
+
+            {activeTab !== 'padel' && <div className="flex justify-end">
                 <button
                     onClick={exportPDF}
                     disabled={reportData.length === 0}
@@ -383,7 +387,7 @@ const ReportesPage = () => {
                 >
                     <span>📄</span> Exportar PDF
                 </button>
-            </div>
+            </div>}
 
             {/* Filters for Ventas */}
             {activeTab === 'ventas' && (
@@ -534,7 +538,7 @@ const ReportesPage = () => {
             )}
             
             {/* Stats Cards */}
-            {(activeTab !== 'caja' || selectedCaja) && (
+            {activeTab !== 'padel' && (activeTab !== 'caja' || selectedCaja) && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <p className="text-sm text-gray-500">

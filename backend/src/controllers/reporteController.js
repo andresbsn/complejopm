@@ -158,6 +158,88 @@ const reporteController = {
             console.error('Error getting debtors report:', error);
             res.status(500).json({ error: 'Error al generar reporte de deudores' });
         }
+    },
+
+    getPadelStats: async (req, res) => {
+        try {
+            const today = new Date().toISOString().slice(0, 10);
+            const fechaDesde = req.query.fechaDesde || `${today.slice(0, 8)}01`;
+            const fechaHasta = req.query.fechaHasta || today;
+
+            const baseCondition = `
+                FROM turnos t
+                JOIN canchas c ON c.id = t.cancha_id
+                WHERE c.tipo = 'padel'
+                  AND t.estado <> 'cancelado'
+                  AND t.fecha BETWEEN $1::date AND $2::date
+            `;
+
+            const [summary, daily, courts, hours, weekdays, statuses] = await Promise.all([
+                pool.query(`
+                    SELECT
+                        COUNT(*) FILTER (WHERE t.fecha = CURRENT_DATE) AS hoy,
+                        COUNT(*) FILTER (WHERE t.fecha >= date_trunc('week', CURRENT_DATE)::date) AS semana,
+                        COUNT(*) FILTER (WHERE t.fecha >= date_trunc('month', CURRENT_DATE)::date) AS mes,
+                        COUNT(*) AS total_periodo,
+                        COALESCE(SUM(t.monto_total), 0) AS ingresos_periodo,
+                        COALESCE(AVG(t.monto_total), 0) AS ticket_promedio,
+                        COUNT(DISTINCT t.cliente_telefono) FILTER (WHERE t.cliente_telefono IS NOT NULL AND t.cliente_telefono <> '') AS clientes_unicos
+                    ${baseCondition}
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT calendario.fecha::date AS fecha,
+                           COUNT(t.id)::int AS cantidad,
+                           COALESCE(SUM(t.monto_total), 0) AS ingresos
+                    FROM generate_series($1::date, $2::date, INTERVAL '1 day') AS calendario(fecha)
+                    LEFT JOIN turnos t ON t.fecha = calendario.fecha
+                    LEFT JOIN canchas c ON c.id = t.cancha_id AND c.tipo = 'padel'
+                    WHERE t.id IS NULL OR (c.id IS NOT NULL AND t.estado <> 'cancelado')
+                    GROUP BY calendario.fecha
+                    ORDER BY calendario.fecha ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT c.nombre, COUNT(*)::int AS cantidad, COALESCE(SUM(t.monto_total), 0) AS ingresos
+                    ${baseCondition}
+                    GROUP BY c.id, c.nombre
+                    ORDER BY cantidad DESC, c.nombre ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT TO_CHAR(t.hora_inicio, 'HH24:MI') AS franja, COUNT(*)::int AS cantidad
+                    ${baseCondition}
+                    GROUP BY t.hora_inicio
+                    ORDER BY cantidad DESC, t.hora_inicio ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT EXTRACT(ISODOW FROM t.fecha)::int AS dia, COUNT(*)::int AS cantidad
+                    ${baseCondition}
+                    GROUP BY dia
+                    ORDER BY dia ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT t.estado, COUNT(*)::int AS cantidad
+                    FROM turnos t
+                    JOIN canchas c ON c.id = t.cancha_id
+                    WHERE c.tipo = 'padel'
+                      AND t.fecha BETWEEN $1::date AND $2::date
+                    GROUP BY t.estado
+                    ORDER BY cantidad DESC
+                `, [fechaDesde, fechaHasta])
+            ]);
+
+            res.json({
+                fechaDesde,
+                fechaHasta,
+                resumen: summary.rows[0],
+                porDia: daily.rows,
+                porCancha: courts.rows,
+                porFranja: hours.rows,
+                porDiaSemana: weekdays.rows,
+                porEstado: statuses.rows
+            });
+        } catch (error) {
+            console.error('Error getting padel statistics:', error);
+            res.status(500).json({ error: 'Error al generar estadísticas de pádel' });
+        }
     }
 };
 

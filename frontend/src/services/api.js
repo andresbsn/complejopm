@@ -190,6 +190,13 @@ export const ReporteService = {
     async getDeudores() {
         const response = await api.get('/reportes/deudores');
         return response.data;
+    },
+    async getPadelStats(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde);
+        if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta);
+        const response = await api.get(`/reportes/padel?${params.toString()}`);
+        return response.data;
     }
 };
 
