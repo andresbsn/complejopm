@@ -169,7 +169,7 @@ const reporteController = {
             const baseCondition = `
                 FROM turnos t
                 JOIN canchas c ON c.id = t.cancha_id
-                WHERE c.tipo = 'padel'
+                WHERE LOWER(c.tipo) = 'padel'
                   AND t.estado <> 'cancelado'
                   AND t.fecha BETWEEN $1::date AND $2::date
             `;
@@ -192,7 +192,7 @@ const reporteController = {
                            COALESCE(SUM(t.monto_total), 0) AS ingresos
                     FROM generate_series($1::date, $2::date, INTERVAL '1 day') AS calendario(fecha)
                     LEFT JOIN turnos t ON t.fecha = calendario.fecha
-                    LEFT JOIN canchas c ON c.id = t.cancha_id AND c.tipo = 'padel'
+                    LEFT JOIN canchas c ON c.id = t.cancha_id AND LOWER(c.tipo) = 'padel'
                     WHERE t.id IS NULL OR (c.id IS NOT NULL AND t.estado <> 'cancelado')
                     GROUP BY calendario.fecha
                     ORDER BY calendario.fecha ASC
@@ -219,7 +219,7 @@ const reporteController = {
                     SELECT t.estado, COUNT(*)::int AS cantidad
                     FROM turnos t
                     JOIN canchas c ON c.id = t.cancha_id
-                    WHERE c.tipo = 'padel'
+                    WHERE LOWER(c.tipo) = 'padel'
                       AND t.fecha BETWEEN $1::date AND $2::date
                     GROUP BY t.estado
                     ORDER BY cantidad DESC

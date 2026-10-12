@@ -8,7 +8,11 @@ const getToday = () => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-const getMonthStart = () => `${getToday().slice(0, 8)}01`;
+const getYearAgo = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
 
 const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -51,7 +55,7 @@ const Ranking = ({ title, items, labelKey, valueKey, emptyText, formatValue = va
 };
 
 const PadelStatsSection = () => {
-    const [fechaDesde, setFechaDesde] = useState(getMonthStart());
+    const [fechaDesde, setFechaDesde] = useState(getYearAgo());
     const [fechaHasta, setFechaHasta] = useState(getToday());
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -135,7 +139,7 @@ const PadelStatsSection = () => {
                             {daily.map(item => {
                                 const count = Number(item.cantidad) || 0;
                                 return <div key={item.fecha} className="flex items-center gap-3 text-sm">
-                                    <span className="w-24 text-gray-600">{new Date(`${item.fecha}T12:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}</span>
+                                    <span className="w-24 text-gray-600">{new Date(`${String(item.fecha).split('T')[0]}T12:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}</span>
                                     <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${(count / maxDaily) * 100}%` }} /></div>
                                     <strong className="w-8 text-right">{count}</strong>
                                 </div>;
