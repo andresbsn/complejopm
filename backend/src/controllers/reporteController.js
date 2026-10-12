@@ -169,36 +169,33 @@ const reporteController = {
             const baseCondition = `
                 FROM turnos t
                 JOIN canchas c ON c.id = t.cancha_id
+                LEFT JOIN LATERAL (
+                    SELECT GREATEST(
+                        0,
+                        LEAST(COALESCE(SUM(p.monto), 0), t.monto_total)
+                    ) AS total_pagado
+                    FROM pagos p
+                    WHERE p.turno_id = t.id
+                ) pagos ON TRUE
                 WHERE LOWER(c.tipo) = 'padel'
                   AND t.estado <> 'cancelado'
                   AND t.fecha BETWEEN $1::date AND $2::date
             `;
 
-            const [summary, daily, courts, hours, weekdays, statuses] = await Promise.all([
+            const [summary, courts, hours, weekdays, statuses] = await Promise.all([
                 pool.query(`
                     SELECT
                         COUNT(*) FILTER (WHERE t.fecha = CURRENT_DATE) AS hoy,
                         COUNT(*) FILTER (WHERE t.fecha >= date_trunc('week', CURRENT_DATE)::date) AS semana,
                         COUNT(*) FILTER (WHERE t.fecha >= date_trunc('month', CURRENT_DATE)::date) AS mes,
                         COUNT(*) AS total_periodo,
-                        COALESCE(SUM(t.monto_total), 0) AS ingresos_periodo,
+                        COALESCE(SUM(pagos.total_pagado), 0) AS ingresos_periodo,
                         COALESCE(AVG(t.monto_total), 0) AS ticket_promedio,
                         COUNT(DISTINCT t.cliente_telefono) FILTER (WHERE t.cliente_telefono IS NOT NULL AND t.cliente_telefono <> '') AS clientes_unicos
                     ${baseCondition}
                 `, [fechaDesde, fechaHasta]),
                 pool.query(`
-                    SELECT calendario.fecha::date AS fecha,
-                           COUNT(t.id)::int AS cantidad,
-                           COALESCE(SUM(t.monto_total), 0) AS ingresos
-                    FROM generate_series($1::date, $2::date, INTERVAL '1 day') AS calendario(fecha)
-                    LEFT JOIN turnos t ON t.fecha = calendario.fecha
-                    LEFT JOIN canchas c ON c.id = t.cancha_id AND LOWER(c.tipo) = 'padel'
-                    WHERE t.id IS NULL OR (c.id IS NOT NULL AND t.estado <> 'cancelado')
-                    GROUP BY calendario.fecha
-                    ORDER BY calendario.fecha ASC
-                `, [fechaDesde, fechaHasta]),
-                pool.query(`
-                    SELECT c.nombre, COUNT(*)::int AS cantidad, COALESCE(SUM(t.monto_total), 0) AS ingresos
+                    SELECT c.nombre, COUNT(*)::int AS cantidad, COALESCE(SUM(pagos.total_pagado), 0) AS ingresos
                     ${baseCondition}
                     GROUP BY c.id, c.nombre
                     ORDER BY cantidad DESC, c.nombre ASC
@@ -230,7 +227,6 @@ const reporteController = {
                 fechaDesde,
                 fechaHasta,
                 resumen: summary.rows[0],
-                porDia: daily.rows,
                 porCancha: courts.rows,
                 porFranja: hours.rows,
                 porDiaSemana: weekdays.rows,

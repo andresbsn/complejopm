@@ -77,7 +77,6 @@ const PadelStatsSection = () => {
     }, []);
 
     const summary = data?.resumen || {};
-    const daily = data?.porDia || [];
     const courts = data?.porCancha || [];
     const hours = data?.porFranja || [];
     const weekdays = (data?.porDiaSemana || []).map(item => ({
@@ -88,8 +87,6 @@ const PadelStatsSection = () => {
     const peakCourt = courts[0];
     const peakHour = hours[0];
     const peakDay = [...weekdays].sort((a, b) => Number(b.cantidad) - Number(a.cantidad))[0];
-    const maxDaily = Math.max(...daily.map(item => Number(item.cantidad) || 0), 1);
-
     const handleSubmit = event => {
         event.preventDefault();
         loadStats();
@@ -125,28 +122,12 @@ const PadelStatsSection = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <NumberCard label="Ingresos del período" value={`$${formatCurrency(summary.ingresos_periodo || 0)}`} detail="Según monto de cada turno" />
+                <NumberCard label="Ingresos del período" value={`$${formatCurrency(summary.ingresos_periodo || 0)}`} detail="Pagos registrados de los turnos" />
                 <NumberCard label="Ticket promedio" value={`$${formatCurrency(summary.ticket_promedio || 0)}`} detail="Ingreso promedio por turno" />
                 <NumberCard label="Clientes identificados" value={summary.clientes_unicos || 0} detail="Por teléfono registrado" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <h3 className="font-semibold text-gray-800 mb-1">Demanda por día</h3>
-                    <p className="text-xs text-gray-500 mb-4">Cantidad de turnos en el período seleccionado</p>
-                    {daily.length === 0 ? <p className="text-sm text-gray-500">No hay turnos para este período.</p> : (
-                        <div className="space-y-3">
-                            {daily.map(item => {
-                                const count = Number(item.cantidad) || 0;
-                                return <div key={item.fecha} className="flex items-center gap-3 text-sm">
-                                    <span className="w-24 text-gray-600">{new Date(`${String(item.fecha).split('T')[0]}T12:00:00`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}</span>
-                                    <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${(count / maxDaily) * 100}%` }} /></div>
-                                    <strong className="w-8 text-right">{count}</strong>
-                                </div>;
-                            })}
-                        </div>
-                    )}
-                </div>
                 <Ranking title="Uso por cancha" items={courts} labelKey="nombre" valueKey="cantidad" emptyText="No hay datos de canchas." />
             </div>
 
