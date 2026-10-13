@@ -5,5 +5,6 @@ build
 .env.*
 logs
 *.log
+*.dump
 .DS_Store
 .md

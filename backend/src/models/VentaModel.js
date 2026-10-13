@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { DomainError, money, method } = require('../utils/financial');
 
 const VentaModel = {
     // Crear una nueva venta con sus detalles
@@ -8,10 +9,12 @@ const VentaModel = {
             await client.query('BEGIN');
 
             // 0. Obtener caja abierta
-            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
-            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
-
-            const { items, total, usuario_id, observaciones } = ventaData;
+            const { items, total, usuario_id, observaciones, caja_id } = ventaData;
+            if (!caja_id) throw new DomainError('Caja requerida', 409);
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE id=$1 AND estado = 'abierta' FOR UPDATE", [caja_id]);
+            if (!cajaRes.rows.length) throw new DomainError('La caja no está abierta', 409);
+            if (!Array.isArray(items) || !items.length) throw new DomainError('Debe informar items');
+            const totalAmount = money(total, 'total');
             let { pagos } = ventaData;
 
             // Backward compatibility / Single payment handling
@@ -19,12 +22,16 @@ const VentaModel = {
                 const { metodo_pago, jugador_id } = ventaData; // Legacy fields
                 pagos = [{
                     metodo: metodo_pago,
-                    monto: total,
+                    monto: totalAmount,
                     jugador_id: jugador_id
                 }];
             }
 
             // Determine aggregate method name for the sale record
+            if (!Array.isArray(pagos) || !pagos.length) throw new DomainError('Debe informar pagos');
+            pagos = pagos.map(p => ({ ...p, monto: money(p.monto), metodo: method(p.metodo) }));
+            if (pagos.some(p => p.metodo === 'cuenta_corriente' && !p.jugador_id)) throw new DomainError('Se requiere jugador_id para pago con cuenta corriente');
+            if (Math.abs(pagos.reduce((s, p) => s + p.monto, 0) - totalAmount) > 0.005) throw new DomainError('La suma de pagos debe coincidir con el total', 409);
             const metodo_pago_global = pagos.length > 1 ? 'multiple' : pagos[0].metodo;
 
             // 1. Insertar la venta
@@ -33,7 +40,7 @@ const VentaModel = {
                 VALUES ($1, $2, $3, $4)
                 RETURNING *
             `;
-            const ventaResult = await client.query(ventaQuery, [total, metodo_pago_global, cajaId, observaciones]);
+            const ventaResult = await client.query(ventaQuery, [totalAmount, metodo_pago_global, caja_id, observaciones]);
             const venta = ventaResult.rows[0];
 
             // 1.5 Procesar pagos
@@ -49,27 +56,29 @@ const VentaModel = {
                     if (!pago.jugador_id) throw new Error('Se requiere jugador_id para pago con cuenta corriente');
 
                     const movimientoQuery = `
-                        INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id)
-                        VALUES ($1, 'DEBE', $2, $3, $4, $5)
+                    INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id, referencia_tipo)
+                    VALUES ($1, 'DEBE', $2, $3, $4, $5, 'venta_cantina')
                     `;
                     await client.query(movimientoQuery, [
                         pago.jugador_id,
                         pago.monto,
                         `Compra en Cantina (Venta #${venta.id})`,
                         venta.id,
-                        cajaId
+                        caja_id
                     ]);
                 }
             }
 
             let costoTotalVenta = 0;
+            let totalItems = 0;
 
             // 2. Insertar detalles y actualizar stock
             for (const item of items) {
                 const { producto_id, cantidad, precio_unitario } = item;
+                if (!Number.isInteger(Number(cantidad)) || Number(cantidad) <= 0 || !Number.isFinite(Number(precio_unitario)) || Number(precio_unitario) < 0) throw new DomainError('Item inválido');
 
                 // Validar stock y obtener costo
-                const prodQuery = 'SELECT stock, costo FROM productos WHERE id = $1 FOR UPDATE';
+                const prodQuery = 'SELECT stock, costo, COALESCE(precio_venta, precio) AS precio FROM productos WHERE id = $1 FOR UPDATE';
                 const prodResult = await client.query(prodQuery, [producto_id]);
 
                 if (prodResult.rows.length === 0) {
@@ -79,6 +88,8 @@ const VentaModel = {
                 const product = prodResult.rows[0];
                 const currentStock = product.stock;
                 const costoUnitario = parseFloat(product.costo || 0);
+                const precioServidor = Number(product.precio);
+                if (!Number.isFinite(precioServidor) || precioServidor < 0) throw new DomainError(`El producto ${producto_id} no tiene un precio válido`, 409);
 
                 if (currentStock < cantidad) {
                     throw new Error(`Stock insuficiente para el producto ${producto_id}`);
@@ -88,11 +99,12 @@ const VentaModel = {
 
                 // Insertar detalle
                 const detalleQuery = `
-                    INSERT INTO detalle_venta_cantina (venta_id, producto_id, cantidad, precio_unitario, subtotal)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO detalle_venta_cantina (venta_id, producto_id, cantidad, precio_unitario, subtotal, costo_unitario)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                 `;
-                const subtotal = cantidad * precio_unitario;
-                await client.query(detalleQuery, [venta.id, producto_id, cantidad, precio_unitario, subtotal]);
+                const subtotal = Number(cantidad) * precioServidor;
+                totalItems += subtotal;
+                await client.query(detalleQuery, [venta.id, producto_id, cantidad, precioServidor, subtotal, costoUnitario]);
 
                 // Actualizar stock
                 const updateStockQuery = `
@@ -103,17 +115,24 @@ const VentaModel = {
                 await client.query(updateStockQuery, [cantidad, producto_id]);
             }
 
-            // 3. Si es cortesía TOTAL (gastos_generales), generar un gasto por el COSTO de los productos
-            if (metodo_pago_global === 'gastos_generales') {
+            if (Math.abs(totalItems - totalAmount) > 0.005) {
+                throw new DomainError('La suma de los items debe coincidir con el total', 409);
+            }
+
+            // Registrar como costo interno la proporción cubierta por cortesía.
+            const cortesia = pagos.filter(p => p.metodo === 'gastos_generales').reduce((s, p) => s + p.monto, 0);
+            const costoCortesia = Math.round(costoTotalVenta * (cortesia / totalAmount) * 100) / 100;
+            if (costoCortesia > 0) {
                 const gastoQuery = `
-                    INSERT INTO gastos (descripcion, monto, caja_id, usuario_id)
-                    VALUES ($1, $2, $3, $4)
+                    INSERT INTO gastos (descripcion, monto, caja_id, usuario_id, metodo_pago, venta_id)
+                    VALUES ($1, $2, $3, $4, 'gastos_generales', $5)
                 `;
                 await client.query(gastoQuery, [
                     `Cortesía/Gasto Cantina (Venta #${venta.id})`,
-                    costoTotalVenta,
-                    cajaId,
-                    usuario_id
+                    costoCortesia,
+                    caja_id,
+                    usuario_id,
+                    venta.id
                 ]);
             }
 
@@ -134,12 +153,12 @@ const VentaModel = {
         const conditions = [];
 
         if (fechaDesde) {
-            conditions.push(`(fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= $${values.length + 1}`);
+            conditions.push(`fecha::date >= $${values.length + 1}`);
             values.push(fechaDesde);
         }
 
         if (fechaHasta) {
-            conditions.push(`(fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= $${values.length + 1}`);
+            conditions.push(`fecha::date <= $${values.length + 1}`);
             values.push(fechaHasta);
         }
 
@@ -166,14 +185,15 @@ const VentaModel = {
     },
 
     // Generar Nota de Crédito (Anular venta)
-    async generarNotaCredito(ventaId, usuarioId) {
+    async generarNotaCredito(ventaId, usuarioId, cajaId) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            // 0. Comprobar caja abierta
-            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
-            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
+            // 0. Comprobar la caja explícita tomada por el middleware.
+            if (!cajaId) throw new DomainError('Caja requerida', 409);
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE id = $1 AND estado = 'abierta' FOR UPDATE", [cajaId]);
+            if (!cajaRes.rows.length) throw new DomainError('La caja no está abierta', 409);
 
             // 1. Obtener la venta original
             const ventaRes = await client.query('SELECT * FROM ventas_cantina WHERE id = $1', [ventaId]);
@@ -214,39 +234,59 @@ const VentaModel = {
                     VALUES ($1, $2, $3)
                 `, [nc.id, pago.metodo, -parseFloat(pago.monto)]);
 
-                // Revertir en cuenta corriente si el método fue cuenta_corriente
-                if (pago.metodo === 'cuenta_corriente') {
-                    // Buscar a qué jugador se le cargó la venta
-                    const movRes = await client.query(`SELECT jugador_id FROM movimientos_cuenta WHERE referencia_id = $1 AND tipo = 'DEBE' AND descripcion LIKE '%Venta #%' LIMIT 1`, [venta.id]);
-                    if (movRes.rows.length > 0) {
-                        const jugador_id = movRes.rows[0].jugador_id;
-                        await client.query(`
-                            INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id)
-                            VALUES ($1, 'HABER', $2, $3, $4, $5)
-                        `, [jugador_id, parseFloat(pago.monto), `Anulación Venta #${venta.id} (NC)`, nc.id, cajaId]);
-                    }
-                }
+            }
+
+            // Revertir cada deuda original exactamente una vez. Esto conserva el
+            // jugador y monto correctos incluso si una venta usó varias cuentas.
+            const deudasRes = await client.query(`
+                SELECT id, jugador_id, monto
+                FROM movimientos_cuenta
+                WHERE referencia_id = $1
+                  AND tipo = 'DEBE'
+                  AND (
+                      referencia_tipo = 'venta_cantina'
+                      OR (
+                          referencia_tipo IS NULL
+                          AND descripcion LIKE '%Venta #%'
+                          AND NOT EXISTS (
+                              SELECT 1
+                              FROM movimientos_cuenta tipado
+                              WHERE tipado.referencia_id = $1
+                                AND tipado.tipo = 'DEBE'
+                                AND tipado.referencia_tipo = 'venta_cantina'
+                          )
+                      )
+                  )
+                ORDER BY id
+                FOR UPDATE
+            `, [venta.id]);
+            for (const deuda of deudasRes.rows) {
+                await client.query(`
+                    INSERT INTO movimientos_cuenta (jugador_id, tipo, monto, descripcion, referencia_id, caja_id, referencia_tipo)
+                    VALUES ($1, 'HABER', $2, $3, $4, $5, 'venta_cantina')
+                `, [deuda.jugador_id, deuda.monto, `Anulación Venta #${venta.id} (NC)`, nc.id, cajaId]);
             }
 
             // 4. Obtener detalles, revertir stock y subtotal
             const detallesRes = await client.query('SELECT * FROM detalle_venta_cantina WHERE venta_id = $1', [ventaId]);
-            let costoTotalVenta = 0;
-
             for (const item of detallesRes.rows) {
                 const prodRes = await client.query('SELECT costo FROM productos WHERE id = $1', [item.producto_id]);
-                const costoUnitario = prodRes.rows.length > 0 ? parseFloat(prodRes.rows[0].costo || 0) : 0;
-                costoTotalVenta += (costoUnitario * item.cantidad);
+                const costoActual = prodRes.rows.length > 0 ? parseFloat(prodRes.rows[0].costo || 0) : 0;
+                const costoOriginal = item.costo_unitario === null || item.costo_unitario === undefined
+                    ? costoActual
+                    : parseFloat(item.costo_unitario);
 
                 // Insertar detalle negativo
                 await client.query(`
-                    INSERT INTO detalle_venta_cantina (venta_id, producto_id, cantidad, precio_unitario, subtotal)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO detalle_venta_cantina (venta_id, producto_id, cantidad, precio_unitario, subtotal, costo_unitario)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                 `, [
                     nc.id,
                     item.producto_id,
                     -parseInt(item.cantidad),
                     parseFloat(item.precio_unitario),
-                    -parseFloat(item.subtotal)
+                    -parseFloat(item.subtotal),
+                    costoOriginal
                 ]);
 
                 // Devolver stock al producto
@@ -257,17 +297,32 @@ const VentaModel = {
                 `, [parseInt(item.cantidad), item.producto_id]);
             }
 
-            // 5. Si la venta original fue cargada a gastos_generales (cortesía), 
-            // revertir el gasto generado
-            if (venta.metodo_pago === 'gastos_generales') {
+            // 5. Revertir el gasto exacto generado por cualquier componente de
+            // cortesía (total o mixto), sin recalcularlo con costos actuales.
+            const gastoOriginalRes = await client.query(`
+                SELECT COALESCE(SUM(monto), 0) AS monto
+                FROM gastos
+                WHERE monto > 0
+                  AND (
+                      venta_id = $1
+                      OR (
+                          venta_id IS NULL
+                          AND descripcion = $2
+                          AND NOT EXISTS (SELECT 1 FROM gastos WHERE venta_id = $1)
+                      )
+                  )
+            `, [ventaId, `Cortesía/Gasto Cantina (Venta #${ventaId})`]);
+            const gastoOriginal = Number(gastoOriginalRes.rows[0].monto || 0);
+            if (gastoOriginal > 0) {
                 await client.query(`
-                     INSERT INTO gastos (descripcion, monto, caja_id, usuario_id)
-                     VALUES ($1, $2, $3, $4)
+                     INSERT INTO gastos (descripcion, monto, caja_id, usuario_id, metodo_pago, venta_id)
+                     VALUES ($1, $2, $3, $4, 'gastos_generales', $5)
                  `, [
                     `Anulación Cortesía (Venta #${ventaId})`,
-                    -costoTotalVenta,
+                    -gastoOriginal,
                     cajaId,
-                    usuarioId || null
+                    usuarioId || null,
+                    nc.id
                 ]);
             }
 

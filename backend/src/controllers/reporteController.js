@@ -12,16 +12,23 @@ const reporteController = {
                         v.fecha, 
                         'VENTA' as tipo, 
                         'Venta Cantina #' || v.id as descripcion, 
-                        v.metodo_pago as metodo, 
-                        v.total as monto, 
-                        (CASE WHEN v.metodo_pago = 'gastos_generales' THEN 0 ELSE v.total END - 
-                            COALESCE((SELECT SUM(d.cantidad * p.costo) 
+                        v.metodo_pago as metodo,
+                        COALESCE((SELECT SUM(CASE WHEN pv.metodo = 'gastos_generales' THEN 0 ELSE pv.monto END)
+                                  FROM pagos_ventas pv
+                                  WHERE pv.venta_id = v.id),
+                                 CASE WHEN v.metodo_pago = 'gastos_generales' THEN 0 ELSE v.total END) as monto,
+                        (COALESCE((SELECT SUM(CASE WHEN pv.metodo = 'gastos_generales' THEN 0 ELSE pv.monto END)
+                                   FROM pagos_ventas pv
+                                   WHERE pv.venta_id = v.id),
+                                  CASE WHEN v.metodo_pago = 'gastos_generales' THEN 0 ELSE v.total END) -
+                            COALESCE((SELECT SUM(d.cantidad * COALESCE(d.costo_unitario, p.costo))
                                       FROM detalle_venta_cantina d 
                                       JOIN productos p ON d.producto_id = p.id 
                                       WHERE d.venta_id = v.id), 0)
                         ) as ganancia,
                         v.observaciones,
-                        'cantina' as categoria_venta
+                        'cantina' as categoria_venta,
+                        ARRAY(SELECT DISTINCT pv.metodo FROM pagos_ventas pv WHERE pv.venta_id = v.id) as metodos_pago
                     FROM ventas_cantina v
                     UNION ALL
                     SELECT 
@@ -33,7 +40,8 @@ const reporteController = {
                         p.monto,
                         p.monto as ganancia,
                         p.observaciones,
-                        LOWER(c.tipo) as categoria_venta
+                        LOWER(c.tipo) as categoria_venta,
+                        ARRAY[p.metodo]::text[] as metodos_pago
                     FROM pagos p
                     JOIN turnos t ON p.turno_id = t.id
                     JOIN canchas c ON t.cancha_id = c.id
@@ -47,7 +55,8 @@ const reporteController = {
                         i.monto_abonado as monto,
                         0 as ganancia,
                         NULL as observaciones,
-                        'torneo' as categoria_venta
+                        'torneo' as categoria_venta,
+                        ARRAY(SELECT DISTINCT pi.metodo FROM pagos_inscripcion pi WHERE pi.inscripcion_id = i.id) as metodos_pago
                     FROM inscripciones i
                     JOIN torneos t ON i.torneo_id = t.id
                     JOIN jugadores j ON i.jugador_id = j.id
@@ -60,12 +69,12 @@ const reporteController = {
             let finalParams = [];
 
             if (fechaDesde) {
-                finalQuery += ` AND (fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= $${paramCounter}`;
+                finalQuery += ` AND fecha::date >= $${paramCounter}`;
                 finalParams.push(fechaDesde);
                 paramCounter++;
             }
             if (fechaHasta) {
-                finalQuery += ` AND (fecha AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= $${paramCounter}`;
+                finalQuery += ` AND fecha::date <= $${paramCounter}`;
                 finalParams.push(fechaHasta);
                 paramCounter++;
             }
@@ -75,7 +84,7 @@ const reporteController = {
                 paramCounter++;
             }
             if (metodoPago) {
-                finalQuery += ` AND metodo = $${paramCounter}`;
+                finalQuery += ` AND (metodo = $${paramCounter} OR $${paramCounter} = ANY(metodos_pago))`;
                 finalParams.push(metodoPago);
                 paramCounter++;
             }

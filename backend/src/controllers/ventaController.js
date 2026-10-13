@@ -5,12 +5,13 @@ const ventaController = {
         try {
             const venta = await VentaModel.create({
                 ...req.body,
-                usuario_id: req.user.id
+                usuario_id: req.user.id,
+                caja_id: req.caja && req.caja.id
             });
             res.status(201).json(venta);
         } catch (error) {
             console.error('Error al crear venta:', error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error interno del servidor' });
         }
     },
 
@@ -40,11 +41,11 @@ const ventaController = {
     generarNotaCredito: async (req, res) => {
         try {
             const { id } = req.params;
-            const nc = await VentaModel.generarNotaCredito(id, req.user ? req.user.id : null);
+            const nc = await VentaModel.generarNotaCredito(id, req.user ? req.user.id : null, req.caja && req.caja.id);
             res.status(201).json(nc);
         } catch (error) {
             console.error('Error al generar nota de crédito:', error);
-            res.status(500).json({ error: error.message || 'Error interno del servidor' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error interno del servidor' });
         }
     }
 };

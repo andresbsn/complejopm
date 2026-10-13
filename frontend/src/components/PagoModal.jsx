@@ -31,6 +31,12 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const montoNumerico = Number(monto);
+        if (!Number.isFinite(montoNumerico) || montoNumerico <= 0 || montoNumerico > saldoPendiente) {
+            alerts.warning('Monto inválido', 'El monto debe ser mayor a 0 y no superar el saldo pendiente.');
+            return;
+        }
         
         if (metodo === 'cuenta_corriente' && !selectedJugadorId) {
             alerts.warning('Faltan datos', 'Debe seleccionar un jugador para cargar a cuenta corriente.');
@@ -57,7 +63,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
             }
             
             await api.post(`/turnos/${turnoId}/pagos`, { 
-                monto, 
+                monto: montoNumerico,
                 metodo,
                 observaciones: metodo === 'gastos_generales' ? observaciones : null,
                 jugador_id: metodo === 'cuenta_corriente' ? selectedJugadorId : null
@@ -177,6 +183,8 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                 required
                                 max={saldoPendiente}
+                                min="0.01"
+                                step="0.01"
                             />
                         </div>
                         <div className="mb-4">

@@ -1,28 +1,42 @@
 const pool = require('../config/db');
+const { DomainError, nonNegativeMoney } = require('../utils/financial');
 
 const CajaModel = {
     async abrir(usuario_id, saldo_inicial) {
-        const abierta = await this.getAbierta();
-        if (abierta) throw new Error('Ya existe una caja abierta');
-
-        const query = `
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT pg_advisory_xact_lock(8675309)');
+            const abierta = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' FOR UPDATE");
+            if (abierta.rows.length) throw new DomainError('Ya existe una caja abierta', 409);
+            const query = `
             INSERT INTO cajas (fecha_apertura, saldo_inicial, estado, usuario_apertura_id)
             VALUES (CURRENT_TIMESTAMP, $1, 'abierta', $2)
             RETURNING *
         `;
-        const res = await pool.query(query, [saldo_inicial, usuario_id]);
-        return res.rows[0];
+            const res = await client.query(query, [nonNegativeMoney(saldo_inicial, 'saldo inicial'), usuario_id]);
+            await client.query('COMMIT'); return res.rows[0];
+        } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
     },
 
     async cerrar(id, saldo_final, usuario_id) {
-        const query = `
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const query = `
             UPDATE cajas 
             SET fecha_cierre = CURRENT_TIMESTAMP, saldo_final = $1, estado = 'cerrada', usuario_cierre_id = $2
-            WHERE id = $3
+            WHERE id = $3 AND estado = 'abierta'
             RETURNING *
         `;
-        const res = await pool.query(query, [saldo_final, usuario_id, id]);
-        return res.rows[0];
+            const res = await client.query(query, [nonNegativeMoney(saldo_final, 'saldo final'), usuario_id, id]);
+            if (!res.rows.length) {
+                const exists = await client.query('SELECT id, estado FROM cajas WHERE id = $1', [id]);
+                if (!exists.rows.length) throw new DomainError('Caja no encontrada', 404);
+                throw new DomainError('La caja ya está cerrada', 409);
+            }
+            await client.query('COMMIT'); return res.rows[0];
+        } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
     },
 
     async getAbierta() {
@@ -58,9 +72,8 @@ const CajaModel = {
 
         const { fecha_apertura, fecha_cierre } = cajaRes.rows[0];
 
-        // 2. Buscar movimientos por FECHA en lugar de por ID de caja
-        // Esto corrige el problema de movimientos "huérfanos" o mal asignados,
-        // asegurando que el reporte muestre todo lo que pasó mientras la caja estaba abierta.
+        // La asociación explícita por caja_id es autoritativa. El rango temporal
+        // se conserva únicamente para filas históricas que no tienen caja_id.
         const query = `
             SELECT 
                 'VENTA' as tipo_movimiento, 
@@ -72,7 +85,7 @@ const CajaModel = {
                 NULL as cliente_nombre
             FROM ventas_cantina v
             JOIN pagos_ventas p ON v.id = p.venta_id
-            WHERE v.fecha >= $1 AND ($2::timestamp IS NULL OR v.fecha <= $2::timestamp)
+            WHERE (v.caja_id = $3 OR (v.caja_id IS NULL AND v.fecha >= $1 AND ($2::timestamp IS NULL OR v.fecha <= $2::timestamp)))
             AND p.metodo <> 'gastos_generales'
             UNION ALL
             SELECT 
@@ -86,19 +99,19 @@ const CajaModel = {
             FROM pagos p
             JOIN turnos t ON p.turno_id = t.id
             JOIN canchas c ON t.cancha_id = c.id
-            WHERE p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)
+            WHERE (p.caja_id = $3 OR (p.caja_id IS NULL AND p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)))
             UNION ALL
             SELECT 'INSCRIPCION' as tipo_movimiento, p.id as referencia_id, p.fecha_pago as fecha, 'Inscripción Torneo' || ' - ' || t.descripcion as descripcion, p.monto as monto, p.metodo as metodo_pago, j.nombre as cliente_nombre
             FROM pagos_inscripcion p
             JOIN inscripciones i ON p.inscripcion_id = i.id
             JOIN torneos t ON i.torneo_id = t.id
             JOIN jugadores j ON i.jugador_id = j.id
-            WHERE p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)
+            WHERE (p.caja_id = $3 OR (p.caja_id IS NULL AND p.fecha_pago >= $1 AND ($2::timestamp IS NULL OR p.fecha_pago <= $2::timestamp)))
             UNION ALL
             SELECT 'INGRESO_CUENTA' as tipo_movimiento, m.id as referencia_id, m.fecha, m.descripcion, m.monto, COALESCE(m.metodo_pago, 'CC') as metodo_pago, j.nombre as cliente_nombre
             FROM movimientos_cuenta m
             LEFT JOIN jugadores j ON m.jugador_id = j.id
-            WHERE m.tipo = 'HABER' AND m.fecha >= $1 AND ($2::timestamp IS NULL OR m.fecha <= $2::timestamp)
+            WHERE m.tipo = 'HABER' AND (m.caja_id = $3 OR (m.caja_id IS NULL AND m.fecha >= $1 AND ($2::timestamp IS NULL OR m.fecha <= $2::timestamp)))
             UNION ALL
             SELECT 
                 'GASTO' as tipo_movimiento, 
@@ -109,13 +122,13 @@ const CajaModel = {
                 fecha, 
                 descripcion, 
                 -monto as monto, 
-                CASE WHEN descripcion LIKE '%Cortesía%' THEN 'Cortesía' ELSE 'Efectivo' END as metodo_pago,
+                 COALESCE(metodo_pago, CASE WHEN descripcion LIKE '%Cortesía%' THEN 'Cortesía' ELSE 'Efectivo' END) as metodo_pago,
                 NULL as cliente_nombre
             FROM gastos 
-            WHERE fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)
+            WHERE (caja_id = $3 OR (caja_id IS NULL AND fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)))
             ORDER BY fecha DESC
         `;
-        const res = await pool.query(query, [fecha_apertura, fecha_cierre]);
+        const res = await pool.query(query, [fecha_apertura, fecha_cierre, cajaId]);
         return res.rows;
     }
 };

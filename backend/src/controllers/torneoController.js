@@ -62,11 +62,11 @@ const TorneoController = {
             const { id, inscripcionId } = req.params;
             // The body can now be a single payment object or an array of payment objects
             // The model handles the transition to supporting multiple payments
-            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, req.body);
+            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, req.body, id, req.caja && req.caja.id);
             res.json(inscripcion);
         } catch (error) {
             console.error('Error al registrar pago de inscripcion:', error);
-            res.status(500).json({ error: 'Error al registrar pago' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al registrar pago' });
         }
     },
 

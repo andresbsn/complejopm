@@ -10,6 +10,7 @@ const GastosPage = () => {
     // Form state
     const [descripcion, setDescripcion] = useState('');
     const [monto, setMonto] = useState('');
+    const [metodoPago, setMetodoPago] = useState('');
 
     useEffect(() => {
         fetchGastos();
@@ -29,16 +30,18 @@ const GastosPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!descripcion || !monto) {
-            alerts.warning('Datos incompletos', 'Debes completar la descripción y el monto.');
+        const montoNumerico = parseFloat(monto);
+        if (!descripcion || !metodoPago || !Number.isFinite(montoNumerico) || montoNumerico < 0.01) {
+            alerts.warning('Datos incompletos', 'Debes completar la descripción, el método de pago y un monto mayor a 0.');
             return;
         }
 
         try {
-            await GastoService.create({ descripcion, monto: parseFloat(monto) });
+            await GastoService.create({ descripcion, monto: montoNumerico, metodo_pago: metodoPago });
             alerts.toast('success', 'Gasto registrado correctamente');
             setDescripcion('');
             setMonto('');
+            setMetodoPago('');
             fetchGastos();
         } catch (err) {
             alerts.error('Error', err.response?.data?.error || 'Error al registrar el gasto');
@@ -53,7 +56,7 @@ const GastosPage = () => {
             alerts.toast('success', 'Gasto eliminado');
             fetchGastos();
         } catch (err) {
-            alerts.error('Error', 'No se pudo eliminar el gasto');
+            alerts.error('Error', err.response?.data?.error || 'No se pudo eliminar el gasto');
         }
     };
 
@@ -73,7 +76,7 @@ const GastosPage = () => {
                             className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                             placeholder="Ej: Limpieza, Luz, etc."
                         />
-                    </div>
+                         </div>
                     <div className="w-full md:w-48">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                         <div className="relative rounded-md shadow-sm">
@@ -87,9 +90,25 @@ const GastosPage = () => {
                                 className="pl-7 w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                 placeholder="0.00"
                                 step="0.01"
-                                min="0"
-                            />
-                        </div>
+                                 min="0.01"
+                             />
+                         </div>
+                     </div>
+                    <div className="w-full md:w-48">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+                        <select
+                            value={metodoPago}
+                            onChange={(e) => setMetodoPago(e.target.value)}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                        >
+                            <option value="">Seleccionar...</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="qr">QR</option>
+                            <option value="debito">Débito</option>
+                            <option value="credito">Crédito</option>
+                        </select>
                     </div>
                     <button
                         type="submit"
@@ -120,6 +139,7 @@ const GastosPage = () => {
                             </div>
                             <div className="text-sm text-gray-600 mb-3">
                                 <span className="text-gray-400 text-xs">Registrado por:</span> {gasto.usuario_nombre || '-'}
+                                <br /><span className="text-gray-400 text-xs">Método:</span> {gasto.metodo_pago || '-'}
                             </div>
                             <div className="flex justify-end pt-3 border-t border-gray-100">
                                 <button
@@ -142,15 +162,16 @@ const GastosPage = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Registrado Por</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan="5" className="text-center py-8">Cargando gastos...</td></tr>
+                            <tr><td colSpan="6" className="text-center py-8">Cargando gastos...</td></tr>
                         ) : gastos.length === 0 ? (
-                            <tr><td colSpan="5" className="text-center py-8 text-gray-500">No hay gastos registrados.</td></tr>
+                            <tr><td colSpan="6" className="text-center py-8 text-gray-500">No hay gastos registrados.</td></tr>
                         ) : (
                             gastos.map((gasto) => (
                                 <tr key={gasto.id} className="hover:bg-gray-50">
@@ -162,6 +183,9 @@ const GastosPage = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                                         {gasto.usuario_nombre || '-'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {gasto.metodo_pago || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold text-right">
                                         -${formatCurrency(gasto.monto)}

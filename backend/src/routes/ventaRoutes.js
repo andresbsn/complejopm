@@ -6,6 +6,6 @@ const { checkCajaAbierta } = require('../middleware/cajaMiddleware');
 router.post('/', checkCajaAbierta, ventaController.createVenta);
 router.get('/', ventaController.getVentas);
 router.get('/:id/detalles', ventaController.getDetallesVenta);
-router.post('/:id/nota-credito', ventaController.generarNotaCredito);
+router.post('/:id/nota-credito', checkCajaAbierta, ventaController.generarNotaCredito);
 
 module.exports = router;

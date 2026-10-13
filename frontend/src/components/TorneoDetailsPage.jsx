@@ -30,10 +30,10 @@ const TorneoDetailsPage = () => {
     }, [id]);
 
     useEffect(() => {
-        if (isInscribeModalOpen || isPaymentModalOpen) {
+        if (isInscribeModalOpen) {
             fetchJugadores();
         }
-    }, [isInscribeModalOpen, isPaymentModalOpen]);
+    }, [isInscribeModalOpen]);
 
     const fetchTorneoDetails = async () => {
         setLoading(true);
@@ -105,15 +105,15 @@ const TorneoDetailsPage = () => {
     const handlePayment = async (e) => {
         e.preventDefault();
         
-        const totalAbonar = pagos.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
-        if (totalAbonar <= 0) {
-            alerts.warning('Monto inválido', 'El monto total debe ser mayor a 0');
+        const pendiente = Number(torneo.costo_inscripcion) - Number(selectedInscripcion?.monto_abonado || 0);
+        const montos = pagos.map(p => Number(p.monto));
+        const totalAbonar = montos.reduce((sum, monto) => sum + monto, 0);
+        if (montos.some(monto => !Number.isFinite(monto) || monto <= 0)) {
+            alerts.warning('Monto inválido', 'Cada monto debe ser mayor a 0.');
             return;
         }
-
-        const hasCCWithoutJugador = pagos.some(p => p.metodo === 'cuenta_corriente' && !p.jugador_id);
-        if (hasCCWithoutJugador) {
-            alerts.warning('Información faltante', 'Debe seleccionar un jugador para los pagos con Cuenta Corriente');
+        if (totalAbonar > pendiente) {
+            alerts.warning('Monto inválido', 'La suma de los pagos no puede superar el pendiente.');
             return;
         }
 
@@ -125,7 +125,7 @@ const TorneoDetailsPage = () => {
             fetchTorneoDetails();
             alerts.toast('success', 'Pago registrado exitosamente');
         } catch (error) {
-            alerts.error('Error', 'No se pudo registrar el pago');
+            alerts.error('Error', error.response?.data?.error || 'No se pudo registrar el pago');
         } finally {
             setPaying(false);
         }
@@ -408,8 +408,11 @@ const TorneoDetailsPage = () => {
                                                         type="number"
                                                         required
                                                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                        value={pago.monto}
-                                                        onChange={e => handlePagoChange(index, 'monto', e.target.value)}
+                                                         value={pago.monto}
+                                                         onChange={e => handlePagoChange(index, 'monto', e.target.value)}
+                                                         min="0.01"
+                                                         step="0.01"
+                                                         max={torneo.costo_inscripcion - (selectedInscripcion?.monto_abonado || 0)}
                                                     />
                                                 </div>
                                                 <div className="flex-1">
@@ -426,15 +429,12 @@ const TorneoDetailsPage = () => {
                                                         <option value="cuenta_corriente">Cuenta Corriente</option>
                                                     </select>
                                                 </div>
-                                                {pago.metodo === 'cuenta_corriente' && (
-                                                    <div className="flex-[1.5] overflow-visible">
-                                                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Cargar a</label>
-                                                        <SearchableSelect 
-                                                            options={jugadoresOptions}
-                                                            value={pago.jugador_id}
-                                                            onChange={(option) => handlePagoChange(index, 'jugador_id', option.value)}
-                                                            placeholder="Seleccionar..."
-                                                        />
+                                                 {pago.metodo === 'cuenta_corriente' && (
+                                                     <div className="flex-[1.5] overflow-visible">
+                                                         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Cargar a</label>
+                                                         <div className="py-2 px-3 border border-gray-300 rounded-md bg-white text-sm text-gray-700">
+                                                             {paymentJugador?.nombre || 'Jugador de la inscripción'}
+                                                         </div>
                                                     </div>
                                                 )}
                                                 {pagos.length > 1 && (

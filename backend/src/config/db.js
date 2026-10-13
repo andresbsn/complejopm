@@ -10,9 +10,11 @@ const poolConfig = {
   port: process.env.DB_PORT || 5432,
 };
 
+const connectionOptions = [`-c timezone=${process.env.APP_TIMEZONE || 'America/Argentina/Buenos_Aires'}`];
 if (process.env.DB_SCHEMA) {
-  poolConfig.options = `-c search_path=${process.env.DB_SCHEMA}`;
+  connectionOptions.push(`-c search_path=${process.env.DB_SCHEMA}`);
 }
+poolConfig.options = connectionOptions.join(' ');
 
 const pool = new Pool(poolConfig);
 

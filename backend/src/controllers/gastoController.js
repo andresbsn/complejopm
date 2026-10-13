@@ -1,27 +1,24 @@
 const GastoModel = require('../models/GastoModel');
-const CajaModel = require('../models/CajaModel');
 
 const GastoController = {
     create: async (req, res) => {
         try {
             const { descripcion, monto } = req.body;
-            // Get open caja
-            const cajaAbierta = await CajaModel.getAbierta();
-            if (!cajaAbierta) {
-                return res.status(400).json({ error: 'No hay una caja abierta para registrar el gasto.' });
-            }
+            const metodo_pago = req.body.metodo_pago || req.body.metodo || 'efectivo';
+            if (!req.caja) return res.status(409).json({ error: 'No hay una caja abierta' });
 
             const gasto = await GastoModel.create({
                 descripcion,
                 monto,
-                caja_id: cajaAbierta.id,
+                caja_id: req.caja.id,
+                metodo_pago,
                 usuario_id: req.user ? req.user.id : null // Assuming auth middleware populates req.user
             });
 
             res.status(201).json(gasto);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Error al registrar gasto' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al registrar gasto' });
         }
     },
 
@@ -43,7 +40,7 @@ const GastoController = {
             res.json(deleted);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Error al eliminar gasto' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al eliminar gasto' });
         }
     }
 };

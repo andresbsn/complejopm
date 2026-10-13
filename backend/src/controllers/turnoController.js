@@ -53,13 +53,14 @@ const TurnoController = {
                 monto,
                 metodo,
                 observaciones,
-                jugador_id
+                jugador_id,
+                caja_id: req.caja && req.caja.id
             });
 
             res.status(201).json(pago);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Error al registrar el pago' });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al registrar el pago' });
         }
     },
 

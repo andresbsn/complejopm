@@ -15,7 +15,7 @@ const CajaController = {
             res.status(201).json(caja);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al abrir la caja' });
         }
     },
 
@@ -29,7 +29,7 @@ const CajaController = {
             res.json(caja);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: error.message });
+            res.status(error.status || 500).json({ error: error.status ? error.message : 'Error al cerrar la caja' });
         }
     },
 

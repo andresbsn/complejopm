@@ -253,7 +253,7 @@ const ReportesPage = () => {
         const doc = new jsPDF();
         
         doc.setFontSize(18);
-        const title = activeTab === 'ventas' ? 'Reporte de Ingresos' : 
+        const title = activeTab === 'ventas' ? 'Reporte de movimientos/ventas devengadas' :
                       activeTab === 'jugadores' ? 'Reporte de Jugadores por Categoría' : 
                       activeTab === 'deudores' ? 'Reporte de Deudores' :
                       selectedCaja ? `Movimientos Caja #${selectedCaja.id}` : 'Historial de Cajas';
@@ -265,7 +265,7 @@ const ReportesPage = () => {
         let yPos = 40;
 
         if (activeTab === 'ventas') {
-            doc.text(`Total Ingresos: $${formatCurrency(stats.total)}`, 14, 36);
+            doc.text(`Total movimientos/ventas devengadas: $${formatCurrency(stats.total)}`, 14, 36);
             if (isAdmin) {
                 doc.text(`Ganancia Estimada: $${formatCurrency(stats.totalGanancia)}`, 100, 36);
             }
@@ -368,7 +368,7 @@ const ReportesPage = () => {
                                     : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            {tab === 'ventas' ? 'Ingresos' : 
+                            {tab === 'ventas' ? 'Ingresos (movimientos/ventas devengadas)' :
                              tab === 'jugadores' ? 'Jugadores' : 
                              tab === 'caja' ? 'Caja' :
                              tab === 'padel' ? 'Pádel' : 'Deudores'}
@@ -542,9 +542,9 @@ const ReportesPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <p className="text-sm text-gray-500">
-                            {activeTab === 'ventas' ? 'Total Ingresos' : 
+                             {activeTab === 'ventas' ? 'Total movimientos/ventas devengadas' :
                              activeTab === 'jugadores' ? 'Total Jugadores' : 
-                             activeTab === 'caja' ? (isAdmin ? 'Balance Caja' : 'Total Efectivo') : 'Deuda Total'}
+                             activeTab === 'caja' ? (isAdmin ? 'Balance Caja (movimientos)' : 'Total Efectivo') : 'Deuda Total'}
                         </p>
                         <p className={`text-2xl font-bold mt-1 ${activeTab === 'caja' ? (stats.total >= 0 ? 'text-green-600' : 'text-red-600') : 'text-gray-800'}`}>
                             {activeTab === 'jugadores' ? stats.total : `$${formatCurrency(stats.total)}`}

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { DomainError, INSCRIPTION_METHODS, money, method } = require('../utils/financial');
 
 const InscripcionModel = {
     async create(data) {
@@ -25,42 +26,46 @@ const InscripcionModel = {
         return result.rows;
     },
 
-    async registrarPago(id, pagos) {
+    async registrarPago(id, pagos, torneoEsperado, caja_id) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            const cajaRes = await client.query("SELECT id FROM cajas WHERE estado = 'abierta' LIMIT 1");
-            const cajaId = cajaRes.rows.length > 0 ? cajaRes.rows[0].id : null;
+            if (!caja_id) throw new DomainError('Caja requerida', 409);
+            const cajaRes = await client.query("SELECT id FROM cajas WHERE id=$1 AND estado = 'abierta' FOR UPDATE", [caja_id]);
+            if (!cajaRes.rows.length) throw new DomainError('La caja no está abierta', 409);
+            const insRes = await client.query(`SELECT i.*, t.costo_inscripcion, t.descripcion AS torneo_descripcion FROM inscripciones i JOIN torneos t ON t.id=i.torneo_id WHERE i.id=$1 FOR UPDATE`, [id]);
+            if (!insRes.rows.length) throw new DomainError('Inscripción no encontrada', 404);
+            const ins = insRes.rows[0];
+            if (String(ins.torneo_id) !== String(torneoEsperado)) throw new DomainError('La inscripción no pertenece al torneo', 409);
+            if (ins.estado === 'baja') throw new DomainError('La inscripción está dada de baja', 409);
 
             const payments = Array.isArray(pagos) ? pagos : [pagos];
+            if (!payments.length || payments.some(p => !p)) throw new DomainError('Debe informar al menos un pago');
             let totalRecibido = 0;
             let ultimoMetodo = '';
 
             for (const p of payments) {
-                const monto = parseFloat(p.monto);
+                const monto = money(p.monto);
                 const metodo = p.metodo;
+                method(metodo);
+                if (!INSCRIPTION_METHODS.has(metodo)) throw new DomainError('Método de pago no permitido para inscripciones');
+                if (metodo === 'cuenta_corriente' && (!ins.jugador_id || (p.jugador_id && String(p.jugador_id) !== String(ins.jugador_id)))) throw new DomainError('La cuenta corriente debe usar el jugador de la inscripción');
+                if (metodo === 'cuenta_corriente' && !ins.jugador_id) throw new DomainError('Jugador obligatorio para cuenta corriente');
                 totalRecibido += monto;
                 ultimoMetodo = metodo;
 
                 await client.query(`
                     INSERT INTO pagos_inscripcion (inscripcion_id, monto, metodo, caja_id)
                     VALUES ($1, $2, $3, $4)
-                `, [id, monto, metodo, cajaId]);
+                `, [id, monto, metodo, caja_id]);
 
                 if (metodo === 'cuenta_corriente') {
-                    const { jugador_id, torneo_id } = p; // Ensure these are passed
-                    const CuentaModel = require('./CuentaModel');
-                    await CuentaModel.addMovimiento({
-                        jugador_id: jugador_id,
-                        tipo: 'DEBE',
-                        monto: monto,
-                        descripcion: `Inscripción Torneo #${torneo_id || ''}`,
-                        referencia_id: id,
-                        caja_id: cajaId
-                    }, client); // Pass client for transaction context if CuentaModel supports it
+                    await client.query(`INSERT INTO movimientos_cuenta (jugador_id,tipo,monto,descripcion,referencia_id,caja_id,metodo_pago,referencia_tipo) VALUES ($1,'DEBE',$2,$3,$4,$5,$6,'inscripcion')`, [ins.jugador_id, monto, `Inscripción Torneo #${ins.torneo_id}`, id, caja_id, metodo]);
                 }
             }
+            const pendiente = Number(ins.costo_inscripcion) - Number(ins.monto_abonado || 0);
+            if (totalRecibido > pendiente + 0.005) throw new DomainError('El pago supera el saldo pendiente', 409);
 
             const queryUpdate = `
                 UPDATE inscripciones i
