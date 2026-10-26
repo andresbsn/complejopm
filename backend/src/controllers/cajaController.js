@@ -50,7 +50,7 @@ const CajaController = {
     getMovimientos: async (req, res) => {
         try {
             const { id } = req.params;
-            const movimientos = await CajaModel.getMovimientos(id);
+            const movimientos = await CajaModel.getMovimientos(id, req.user?.rol !== 'admin');
             res.json(movimientos);
         } catch (error) {
             console.error(error);
@@ -60,7 +60,7 @@ const CajaController = {
 
     getHistorial: async (req, res) => {
         try {
-            const cajas = await CajaModel.getTodas();
+            const cajas = await CajaModel.getTodas(req.user?.rol === 'admin');
             res.json(cajas);
         } catch (error) {
             console.error(error);
@@ -71,7 +71,7 @@ const CajaController = {
     getById: async (req, res) => {
         try {
             const { id } = req.params;
-            const caja = await CajaModel.getById(id);
+            const caja = await CajaModel.getById(id, req.user?.rol === 'admin');
             if (!caja) return res.status(404).json({ error: 'Caja no encontrada' });
 
             // Optionally fetch movements too? Or separate call?

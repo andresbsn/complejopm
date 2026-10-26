@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { getLocalDate } = require('../utils/date');
 
 const reporteController = {
     getVentasReport: async (req, res) => {
@@ -171,7 +172,7 @@ const reporteController = {
 
     getPadelStats: async (req, res) => {
         try {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = getLocalDate();
             const fechaDesde = req.query.fechaDesde || `${today.slice(0, 8)}01`;
             const fechaHasta = req.query.fechaHasta || today;
 

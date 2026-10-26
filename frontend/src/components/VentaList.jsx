@@ -3,6 +3,7 @@ import { VentaService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
+import { getLocalDate } from '../utils/date';
 
 const VentaList = ({ refreshTrigger }) => {
     const [ventas, setVentas] = useState([]);
@@ -29,7 +30,7 @@ const VentaList = ({ refreshTrigger }) => {
 
             if (!isAdmin) {
                 // Si no es admin, forzamos a mostrar solo hoy
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalDate();
                 desde = today;
                 hasta = today;
             }

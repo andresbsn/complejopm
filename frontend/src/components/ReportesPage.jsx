@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
 import PadelStatsSection from './PadelStatsSection';
+import { formatArgentinaDateTime, getArgentinaDate } from '../utils/date';
 
 const ReportesPage = () => {
     const { user } = useAuth();
@@ -15,13 +16,7 @@ const ReportesPage = () => {
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState([]);
     // Filters for Ventas
-    const getToday = () => {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    const getToday = getArgentinaDate;
 
     const [fechaDesde, setFechaDesde] = useState(getToday());
     const [fechaHasta, setFechaHasta] = useState(getToday());
@@ -181,13 +176,16 @@ const ReportesPage = () => {
 
     const handleFilterSubmit = (e) => {
         e.preventDefault();
+        if (activeTab === 'ventas' && fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
+            alerts.error('Rango inválido', 'La fecha desde no puede ser posterior a la fecha hasta.');
+            return;
+        }
         fetchReport();
     };
 
     const handleLimpiarFiltros = () => {
         if (activeTab === 'ventas') {
             setFechaDesde('');
-            setFechaHasta('');
             setFechaHasta('');
             setTipo('');
             setCategoriaVenta('');
@@ -260,7 +258,7 @@ const ReportesPage = () => {
         doc.text(title, 14, 22);
 
         doc.setFontSize(11);
-        doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, 30);
+        doc.text(`Fecha de emisión: ${formatArgentinaDateTime(new Date())}`, 14, 30);
 
         let yPos = 40;
 
@@ -275,7 +273,7 @@ const ReportesPage = () => {
 
             const tableRows = reportData.map(item => {
                 const row = [
-                    new Date(item.fecha).toLocaleString(),
+                    formatArgentinaDateTime(item.fecha),
                     item.descripcion,
                     item.observaciones || '-',
                     item.tipo,
@@ -312,7 +310,7 @@ const ReportesPage = () => {
                 doc.text(isAdmin ? `Balance Total: $${formatCurrency(stats.total)}` : `Total Efectivo: $${formatCurrency(stats.total)}`, 14, 36);
                 const tableColumn = ["Fecha", "Tipo", "Descripción", "Método", "Monto"];
                 const tableRows = cajaMovimientos.map(mov => [
-                    new Date(mov.fecha).toLocaleString(),
+                    formatArgentinaDateTime(mov.fecha),
                     mov.tipo_movimiento,
                     mov.descripcion,
                     mov.metodo_pago,
@@ -327,8 +325,8 @@ const ReportesPage = () => {
                  const tableRows = cajasHistory.map(caja => {
                      const common = [
                         caja.id,
-                        new Date(caja.fecha_apertura).toLocaleString(),
-                        caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-',
+                        formatArgentinaDateTime(caja.fecha_apertura),
+                        caja.fecha_cierre ? formatArgentinaDateTime(caja.fecha_cierre) : '-',
                      ];
                      if (isAdmin) {
                          return [
@@ -352,16 +350,21 @@ const ReportesPage = () => {
 
     // Updated tabs list
     const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja', 'padel'] : ['deudores', 'caja', 'padel'];
+    const canExport = activeTab === 'caja'
+        ? (selectedCaja ? cajaMovimientos.length > 0 : cajasHistory.length > 0)
+        : reportData.length > 0;
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Reportes del Sistema</h2>
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+                <div className="flex max-w-full space-x-2 overflow-x-auto bg-gray-100 p-1 rounded-lg">
                     {tabs.map((tab) => (
                         <button
                             key={tab}
+                            type="button"
                             onClick={() => setActiveTab(tab)}
+                            aria-pressed={activeTab === tab}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                 activeTab === tab 
                                     ? 'bg-white text-indigo-600 shadow-sm' 
@@ -382,10 +385,10 @@ const ReportesPage = () => {
             {activeTab !== 'padel' && <div className="flex justify-end">
                 <button
                     onClick={exportPDF}
-                    disabled={reportData.length === 0}
+                    disabled={!canExport}
                     className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                    <span>📄</span> Exportar PDF
+                    <span aria-hidden="true">📄</span> Exportar PDF
                 </button>
             </div>}
 
@@ -529,7 +532,7 @@ const ReportesPage = () => {
                             <option value="">-- Ver Historial de Cajas --</option>
                             {cajasHistory.map(caja => (
                                 <option key={caja.id} value={caja.id}>
-                                    Caja #{caja.id} - {new Date(caja.fecha_apertura).toLocaleDateString()} ({caja.estado})
+                                    Caja #{caja.id} - {formatArgentinaDateTime(caja.fecha_apertura)} ({caja.estado})
                                 </option>
                             ))}
                         </select>
@@ -592,7 +595,7 @@ const ReportesPage = () => {
                                             }`}>
                                                 {item.tipo}
                                             </span>
-                                            <span className="text-xs text-gray-500">{new Date(item.fecha).toLocaleString()}</span>
+                                            <span className="text-xs text-gray-500">{formatArgentinaDateTime(item.fecha)}</span>
                                         </div>
                                         <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
                                         {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
@@ -679,11 +682,11 @@ const ReportesPage = () => {
                                         <div className="text-sm space-y-1 mb-3">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-500">Apertura:</span>
-                                                <span className="text-gray-900">{new Date(caja.fecha_apertura).toLocaleString()}</span>
+                                                <span className="text-gray-900">{formatArgentinaDateTime(caja.fecha_apertura)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-500">Cierre:</span>
-                                                <span className="text-gray-900">{caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-'}</span>
+                                                <span className="text-gray-900">{caja.fecha_cierre ? formatArgentinaDateTime(caja.fecha_cierre) : '-'}</span>
                                             </div>
                                         </div>
                                         {isAdmin && (
@@ -714,7 +717,7 @@ const ReportesPage = () => {
                             <div className="space-y-4">
                                 <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg mb-4">
                                     <h3 className="font-bold text-indigo-900">Caja #{selectedCaja.id}</h3>
-                                    <p className="text-xs text-indigo-700 mt-1">Apertura: {new Date(selectedCaja.fecha_apertura).toLocaleString()}</p>
+                                    <p className="text-xs text-indigo-700 mt-1">Apertura: {formatArgentinaDateTime(selectedCaja.fecha_apertura)}</p>
                                 </div>
                                 {cajaMovimientos.length === 0 ? (
                                     <div className="text-center py-4 text-gray-500">No hay movimientos.</div>
@@ -727,7 +730,7 @@ const ReportesPage = () => {
                                                 }`}>
                                                     {mov.tipo_movimiento}
                                                 </span>
-                                                <span className="text-xs text-gray-500">{new Date(mov.fecha).toLocaleTimeString()}</span>
+                                                <span className="text-xs text-gray-500">{formatArgentinaDateTime(mov.fecha)}</span>
                                             </div>
                                             <p className="font-medium text-gray-900 mb-1">{mov.descripcion}</p>
                                             <div className="flex justify-between items-center text-sm">
@@ -761,7 +764,7 @@ const ReportesPage = () => {
                              <div>
                                 <h3 className="font-bold text-indigo-900">Movimientos Caja #{selectedCaja.id}</h3>
                                 <p className="text-xs text-indigo-700 mt-1">
-                                    Apertura: {new Date(selectedCaja.fecha_apertura).toLocaleString()}</p>
+                                    Apertura: {formatArgentinaDateTime(selectedCaja.fecha_apertura)}</p>
                             </div>
                         </div>
                     )}
@@ -820,7 +823,7 @@ const ReportesPage = () => {
                             {activeTab === 'ventas' && reportData.map(item => (
                                 <tr key={`${item.tipo}-${item.id}`} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(item.fecha).toLocaleString()}
+                                        {formatArgentinaDateTime(item.fecha)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {item.descripcion}
@@ -869,7 +872,7 @@ const ReportesPage = () => {
                             ))}
                             {activeTab === 'caja' && selectedCaja && cajaMovimientos.map((mov, idx) => (
                                 <tr key={idx}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(mov.fecha).toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatArgentinaDateTime(mov.fecha)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mov.tipo_movimiento}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mov.descripcion}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{mov.metodo_pago}</td>
@@ -888,8 +891,8 @@ const ReportesPage = () => {
                              {activeTab === 'caja' && !selectedCaja && cajasHistory.map(caja => (
                                 <tr key={caja.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleSelectCaja(caja)}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{caja.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(caja.fecha_apertura).toLocaleString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatArgentinaDateTime(caja.fecha_apertura)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{caja.fecha_cierre ? formatArgentinaDateTime(caja.fecha_cierre) : '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${caja.estado === 'abierta' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {caja.estado}
@@ -928,7 +931,7 @@ const ReportesPage = () => {
                                         <div className="mt-4 space-y-3 text-sm text-gray-600">
                                             <div className="flex justify-between border-b pb-1">
                                                 <span className="font-semibold">Fecha:</span>
-                                                <span>{new Date(selectedMov.fecha).toLocaleString()}</span>
+                                                <span>{formatArgentinaDateTime(selectedMov.fecha)}</span>
                                             </div>
                                             
                                             {!selectedMov.descripcion?.includes('Venta #') && selectedMov.tipo_movimiento !== 'VENTA' && (

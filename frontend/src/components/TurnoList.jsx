@@ -3,10 +3,11 @@ import { TurnoService } from '../services/api';
 import PagoModal from './PagoModal';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
+import { getLocalDate } from '../utils/date';
 
 const TurnoList = () => {
   const [turnos, setTurnos] = useState([]);
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(getLocalDate);
   const [loading, setLoading] = useState(false);
   const [selectedTurno, setSelectedTurno] = useState(null);
 

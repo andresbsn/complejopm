@@ -45,8 +45,10 @@ const CajaModel = {
         return res.rows[0];
     },
 
-    async getById(id) {
-        const query = "SELECT * FROM cajas WHERE id = $1";
+    async getById(id, includeSensitive = true) {
+        const query = includeSensitive
+            ? "SELECT * FROM cajas WHERE id = $1"
+            : "SELECT id, fecha_apertura, fecha_cierre, estado FROM cajas WHERE id = $1";
         const res = await pool.query(query, [id]);
         return res.rows[0];
     },
@@ -57,13 +59,16 @@ const CajaModel = {
         return res.rows[0];
     },
 
-    async getTodas() {
-        const query = "SELECT * FROM cajas ORDER BY fecha_apertura DESC";
+    async getTodas(includeSensitive = true) {
+        const query = includeSensitive
+            ? "SELECT * FROM cajas ORDER BY fecha_apertura DESC"
+            : `SELECT id, fecha_apertura, fecha_cierre, estado
+               FROM cajas ORDER BY fecha_apertura DESC`;
         const res = await pool.query(query);
         return res.rows;
     },
 
-    async getMovimientos(cajaId) {
+    async getMovimientos(cajaId, soloEfectivo = false) {
         // 1. Obtener rango de fechas de la caja
         const cajaQuery = "SELECT fecha_apertura, fecha_cierre FROM cajas WHERE id = $1";
         const cajaRes = await pool.query(cajaQuery, [cajaId]);
@@ -75,6 +80,7 @@ const CajaModel = {
         // La asociación explícita por caja_id es autoritativa. El rango temporal
         // se conserva únicamente para filas históricas que no tienen caja_id.
         const query = `
+            WITH movimientos AS (
             SELECT 
                 'VENTA' as tipo_movimiento, 
                 v.id as referencia_id, 
@@ -126,9 +132,14 @@ const CajaModel = {
                 NULL as cliente_nombre
             FROM gastos 
             WHERE (caja_id = $3 OR (caja_id IS NULL AND fecha >= $1 AND ($2::timestamp IS NULL OR fecha <= $2::timestamp)))
+            )
+            SELECT * FROM movimientos
+            WHERE $4::boolean = FALSE
+               OR LOWER(COALESCE(metodo_pago, '')) LIKE '%efectivo%'
+               OR tipo_movimiento IN ('GASTO', 'INGRESO_CUENTA')
             ORDER BY fecha DESC
         `;
-        const res = await pool.query(query, [fecha_apertura, fecha_cierre, cajaId]);
+        const res = await pool.query(query, [fecha_apertura, fecha_cierre, cajaId, soloEfectivo]);
         return res.rows;
     }
 };
