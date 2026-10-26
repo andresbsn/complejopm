@@ -13,6 +13,7 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
     const [loading, setLoading] = useState(false);
     const [jugadoresSuggestions, setJugadoresSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const isPast = new Date(`${date}T${timeSlot.start}:00`) < new Date();
 
     useEffect(() => {
         // Pre-fill price based on config and type
@@ -118,6 +119,12 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                                 <p><strong>Fecha:</strong> {date}</p>
                                 <p><strong>Horario:</strong> {timeSlot.start} - {timeSlot.end}</p>
                             </div>
+
+                            {isPast && (
+                                <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                    Este horario ya pasó. Podés cargar la reserva igual para registrar el turno y su pago.
+                                </div>
+                            )}
 
                             <div className="space-y-4">
                                 <div className="relative">
