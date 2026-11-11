@@ -36,20 +36,20 @@ const VentaModel = {
 
             // 1. Insertar la venta
             const ventaQuery = `
-                INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones, usuario_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING *
             `;
-            const ventaResult = await client.query(ventaQuery, [totalAmount, metodo_pago_global, caja_id, observaciones]);
+            const ventaResult = await client.query(ventaQuery, [totalAmount, metodo_pago_global, caja_id, observaciones, usuario_id]);
             const venta = ventaResult.rows[0];
 
             // 1.5 Procesar pagos
             for (const pago of pagos) {
                 // Insertar en pagos_ventas
                 await client.query(`
-                    INSERT INTO pagos_ventas (venta_id, metodo, monto)
-                    VALUES ($1, $2, $3)
-                `, [venta.id, pago.metodo, pago.monto]);
+                    INSERT INTO pagos_ventas (venta_id, metodo, monto, usuario_id)
+                    VALUES ($1, $2, $3, $4)
+                `, [venta.id, pago.metodo, pago.monto, usuario_id]);
 
                 // Si es cuenta corriente, registrar movimiento en cuenta del jugador
                 if (pago.metodo === 'cuenta_corriente') {
@@ -214,15 +214,16 @@ const VentaModel = {
 
             // 2. Insertar Venta Negativa (Nota de Crédito)
             const ncQuery = `
-                INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO ventas_cantina (total, metodo_pago, caja_id, observaciones, usuario_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING *
             `;
             const ncResult = await client.query(ncQuery, [
                 -parseFloat(venta.total),
                 venta.metodo_pago,
                 cajaId,
-                `Nota de Crédito Venta #${ventaId}`
+                `Nota de Crédito Venta #${ventaId}`,
+                usuarioId || null
             ]);
             const nc = ncResult.rows[0];
 
@@ -230,9 +231,9 @@ const VentaModel = {
             const pagosRes = await client.query('SELECT * FROM pagos_ventas WHERE venta_id = $1', [ventaId]);
             for (const pago of pagosRes.rows) {
                 await client.query(`
-                    INSERT INTO pagos_ventas (venta_id, metodo, monto)
-                    VALUES ($1, $2, $3)
-                `, [nc.id, pago.metodo, -parseFloat(pago.monto)]);
+                    INSERT INTO pagos_ventas (venta_id, metodo, monto, usuario_id)
+                    VALUES ($1, $2, $3, $4)
+                `, [nc.id, pago.metodo, -parseFloat(pago.monto), usuarioId || null]);
 
             }
 

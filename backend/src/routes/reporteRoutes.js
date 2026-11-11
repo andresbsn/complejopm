@@ -7,5 +7,6 @@ router.get('/ventas', ensureAdmin, reporteController.getVentasReport);
 router.get('/jugadores-categoria', ensureAdmin, reporteController.getJugadoresPorCategoria);
 router.get('/deudores', reporteController.getDeudores);
 router.get('/padel', reporteController.getPadelStats);
+router.get('/futbol', reporteController.getFutbolStats);
 
 module.exports = router;

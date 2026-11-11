@@ -18,7 +18,7 @@ const TurnoController = {
 
                 turno = await TurnoModel.createFijo({ ...restoDatos, dia_semana });
             } else {
-                turno = await TurnoModel.create({ ...req.body });
+                turno = await TurnoModel.create({ ...req.body, usuario_creacion_id: req.user.id });
             }
 
             res.status(201).json(turno);
@@ -54,7 +54,8 @@ const TurnoController = {
                 metodo,
                 observaciones,
                 jugador_id,
-                caja_id: req.caja && req.caja.id
+                caja_id: req.caja && req.caja.id,
+                usuario_id: req.user.id
             });
 
             res.status(201).json(pago);

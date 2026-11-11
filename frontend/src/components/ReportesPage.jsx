@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
 import PadelStatsSection from './PadelStatsSection';
+import FutbolStatsSection from './FutbolStatsSection';
 import { formatArgentinaDateTime, getArgentinaDate } from '../utils/date';
 
 const ReportesPage = () => {
@@ -349,7 +350,7 @@ const ReportesPage = () => {
     };
 
     // Updated tabs list
-    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja', 'padel'] : ['deudores', 'caja', 'padel'];
+    const tabs = isAdmin ? ['ventas', 'jugadores', 'deudores', 'caja', 'padel', 'futbol'] : ['deudores', 'caja', 'padel', 'futbol'];
     const canExport = activeTab === 'caja'
         ? (selectedCaja ? cajaMovimientos.length > 0 : cajasHistory.length > 0)
         : reportData.length > 0;
@@ -374,15 +375,17 @@ const ReportesPage = () => {
                             {tab === 'ventas' ? 'Ingresos (movimientos/ventas devengadas)' :
                              tab === 'jugadores' ? 'Jugadores' : 
                              tab === 'caja' ? 'Caja' :
-                             tab === 'padel' ? 'Pádel' : 'Deudores'}
+                              tab === 'padel' ? 'Pádel' :
+                              tab === 'futbol' ? 'Fútbol' : 'Deudores'}
                         </button>
                     ))}
                 </div>
             </div>
 
             {activeTab === 'padel' && <PadelStatsSection />}
+            {activeTab === 'futbol' && <FutbolStatsSection />}
 
-            {activeTab !== 'padel' && <div className="flex justify-end">
+            {activeTab !== 'padel' && activeTab !== 'futbol' && <div className="flex justify-end">
                 <button
                     onClick={exportPDF}
                     disabled={!canExport}
@@ -541,7 +544,7 @@ const ReportesPage = () => {
             )}
             
             {/* Stats Cards */}
-            {activeTab !== 'padel' && (activeTab !== 'caja' || selectedCaja) && (
+            {activeTab !== 'padel' && activeTab !== 'futbol' && (activeTab !== 'caja' || selectedCaja) && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <p className="text-sm text-gray-500">

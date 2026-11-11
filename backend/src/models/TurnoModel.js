@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const TurnoModel = {
     // Crear un nuevo turno
     async create(data) {
-        const { cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado = 'confirmado' } = data;
+        const { cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado = 'confirmado', usuario_creacion_id } = data;
 
         // Solo validar superposición si NO es un turno cancelado
         // Los turnos cancelados no ocupan el slot realmente
@@ -25,11 +25,11 @@ const TurnoModel = {
         }
 
         const query = `
-      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado, usuario_creacion_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
-        const values = [cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado];
+        const values = [cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado, usuario_creacion_id];
         const result = await pool.query(query, values);
         return result.rows[0];
     },

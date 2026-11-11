@@ -246,6 +246,84 @@ const reporteController = {
             console.error('Error getting padel statistics:', error);
             res.status(500).json({ error: 'Error al generar estadísticas de pádel' });
         }
+    },
+
+    getFutbolStats: async (req, res) => {
+        try {
+            const today = getLocalDate();
+            const fechaDesde = req.query.fechaDesde || `${today.slice(0, 8)}01`;
+            const fechaHasta = req.query.fechaHasta || today;
+
+            const baseCondition = `
+                FROM turnos t
+                JOIN canchas c ON c.id = t.cancha_id
+                LEFT JOIN LATERAL (
+                    SELECT GREATEST(
+                        0,
+                        LEAST(COALESCE(SUM(p.monto), 0), t.monto_total)
+                    ) AS total_pagado
+                    FROM pagos p
+                    WHERE p.turno_id = t.id
+                ) pagos ON TRUE
+                WHERE LOWER(c.tipo) = 'futbol'
+                  AND t.estado <> 'cancelado'
+                  AND t.fecha BETWEEN $1::date AND $2::date
+            `;
+
+            const [summary, courts, hours, weekdays, statuses] = await Promise.all([
+                pool.query(`
+                    SELECT
+                        COUNT(*) FILTER (WHERE t.fecha = CURRENT_DATE) AS hoy,
+                        COUNT(*) FILTER (WHERE t.fecha >= date_trunc('week', CURRENT_DATE)::date) AS semana,
+                        COUNT(*) FILTER (WHERE t.fecha >= date_trunc('month', CURRENT_DATE)::date) AS mes,
+                        COUNT(*) AS total_periodo,
+                        COALESCE(SUM(pagos.total_pagado), 0) AS ingresos_periodo,
+                        COALESCE(AVG(t.monto_total), 0) AS ticket_promedio,
+                        COUNT(DISTINCT t.cliente_telefono) FILTER (WHERE t.cliente_telefono IS NOT NULL AND t.cliente_telefono <> '') AS clientes_unicos
+                    ${baseCondition}
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT c.nombre, COUNT(*)::int AS cantidad, COALESCE(SUM(pagos.total_pagado), 0) AS ingresos
+                    ${baseCondition}
+                    GROUP BY c.id, c.nombre
+                    ORDER BY cantidad DESC, c.nombre ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT TO_CHAR(t.hora_inicio, 'HH24:MI') AS franja, COUNT(*)::int AS cantidad
+                    ${baseCondition}
+                    GROUP BY t.hora_inicio
+                    ORDER BY cantidad DESC, t.hora_inicio ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT EXTRACT(ISODOW FROM t.fecha)::int AS dia, COUNT(*)::int AS cantidad
+                    ${baseCondition}
+                    GROUP BY dia
+                    ORDER BY dia ASC
+                `, [fechaDesde, fechaHasta]),
+                pool.query(`
+                    SELECT t.estado, COUNT(*)::int AS cantidad
+                    FROM turnos t
+                    JOIN canchas c ON c.id = t.cancha_id
+                    WHERE LOWER(c.tipo) = 'futbol'
+                      AND t.fecha BETWEEN $1::date AND $2::date
+                    GROUP BY t.estado
+                    ORDER BY cantidad DESC
+                `, [fechaDesde, fechaHasta])
+            ]);
+
+            res.json({
+                fechaDesde,
+                fechaHasta,
+                resumen: summary.rows[0],
+                porCancha: courts.rows,
+                porFranja: hours.rows,
+                porDiaSemana: weekdays.rows,
+                porEstado: statuses.rows
+            });
+        } catch (error) {
+            console.error('Error getting football statistics:', error);
+            res.status(500).json({ error: 'Error al generar estadísticas de fútbol' });
+        }
     }
 };
 

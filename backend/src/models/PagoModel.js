@@ -6,7 +6,7 @@ const PagoModel = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const { turno_id, monto, metodo, observaciones, jugador_id, caja_id } = data;
+            const { turno_id, monto, metodo, observaciones, jugador_id, caja_id, usuario_id } = data;
             if (!caja_id) throw new DomainError('Caja requerida', 409);
             const amount = money(monto); method(metodo);
             const caja = await client.query("SELECT id FROM cajas WHERE id = $1 AND estado = 'abierta' FOR UPDATE", [caja_id]);
@@ -21,7 +21,7 @@ const PagoModel = {
             if (metodo === 'cuenta_corriente') {
                 await client.query(`INSERT INTO movimientos_cuenta (jugador_id,tipo,monto,descripcion,referencia_id,caja_id,metodo_pago,referencia_tipo) VALUES ($1,'DEBE',$2,$3,$4,$5,$6,'turno')`, [jugador_id, amount, `Pago Turno #${turno_id}${observaciones ? ` (${observaciones})` : ''}`, turno_id, caja_id, metodo]);
             }
-            const result = await client.query(`INSERT INTO pagos (turno_id,monto,metodo,caja_id,observaciones) VALUES ($1,$2,$3,$4,$5) RETURNING *`, [turno_id, amount, metodo, caja_id, observaciones]);
+            const result = await client.query(`INSERT INTO pagos (turno_id,monto,metodo,caja_id,observaciones,usuario_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [turno_id, amount, metodo, caja_id, observaciones, usuario_id]);
             if (Number(total.rows[0].total) + amount >= Number(turno.monto_total)) await client.query('UPDATE turnos SET pagado=TRUE WHERE id=$1', [turno_id]);
             await client.query('COMMIT'); return result.rows[0];
         } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }

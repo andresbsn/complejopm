@@ -3,13 +3,13 @@ const { DomainError, INSCRIPTION_METHODS, money, method } = require('../utils/fi
 
 const InscripcionModel = {
     async create(data) {
-        const { torneo_id, jugador_id } = data;
+        const { torneo_id, jugador_id, usuario_id } = data;
         const query = `
-            INSERT INTO inscripciones (torneo_id, jugador_id)
-            VALUES ($1, $2)
+            INSERT INTO inscripciones (torneo_id, jugador_id, usuario_id)
+            VALUES ($1, $2, $3)
             RETURNING *
         `;
-        const result = await pool.query(query, [torneo_id, jugador_id]);
+        const result = await pool.query(query, [torneo_id, jugador_id, usuario_id]);
         return result.rows[0];
     },
 
@@ -26,7 +26,7 @@ const InscripcionModel = {
         return result.rows;
     },
 
-    async registrarPago(id, pagos, torneoEsperado, caja_id) {
+    async registrarPago(id, pagos, torneoEsperado, caja_id, usuario_id) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -56,9 +56,9 @@ const InscripcionModel = {
                 ultimoMetodo = metodo;
 
                 await client.query(`
-                    INSERT INTO pagos_inscripcion (inscripcion_id, monto, metodo, caja_id)
-                    VALUES ($1, $2, $3, $4)
-                `, [id, monto, metodo, caja_id]);
+                    INSERT INTO pagos_inscripcion (inscripcion_id, monto, metodo, caja_id, usuario_id)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [id, monto, metodo, caja_id, usuario_id]);
 
                 if (metodo === 'cuenta_corriente') {
                     await client.query(`INSERT INTO movimientos_cuenta (jugador_id,tipo,monto,descripcion,referencia_id,caja_id,metodo_pago,referencia_tipo) VALUES ($1,'DEBE',$2,$3,$4,$5,$6,'inscripcion')`, [ins.jugador_id, monto, `Inscripción Torneo #${ins.torneo_id}`, id, caja_id, metodo]);

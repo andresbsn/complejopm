@@ -197,6 +197,13 @@ export const ReporteService = {
         if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta);
         const response = await api.get(`/reportes/padel?${params.toString()}`);
         return response.data;
+    },
+    async getFutbolStats(filters = {}) {
+        const params = new URLSearchParams();
+        if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde);
+        if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta);
+        const response = await api.get(`/reportes/futbol?${params.toString()}`);
+        return response.data;
     }
 };
 

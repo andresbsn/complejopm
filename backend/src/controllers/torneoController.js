@@ -46,7 +46,7 @@ const TorneoController = {
 
             // Verificar si ya estÃ¡ inscripto? (Database constraint handles it, but good to check)
 
-            const inscripcion = await InscripcionModel.create({ torneo_id: id, jugador_id });
+            const inscripcion = await InscripcionModel.create({ torneo_id: id, jugador_id, usuario_id: req.user.id });
             res.status(201).json(inscripcion);
         } catch (error) {
             if (error.code === '23505') { // Unique constraint violation
@@ -62,7 +62,7 @@ const TorneoController = {
             const { id, inscripcionId } = req.params;
             // The body can now be a single payment object or an array of payment objects
             // The model handles the transition to supporting multiple payments
-            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, req.body, id, req.caja && req.caja.id);
+            const inscripcion = await InscripcionModel.registrarPago(inscripcionId, req.body, id, req.caja && req.caja.id, req.user.id);
             res.json(inscripcion);
         } catch (error) {
             console.error('Error al registrar pago de inscripcion:', error);
