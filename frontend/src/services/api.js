@@ -176,6 +176,7 @@ export const ReporteService = {
         if (filters.tipo) params.append('tipo', filters.tipo);
         if (filters.metodoPago) params.append('metodoPago', filters.metodoPago);
         if (filters.categoriaVenta) params.append('categoriaVenta', filters.categoriaVenta);
+        if (filters.usuarioId) params.append('usuarioId', filters.usuarioId);
 
         const response = await api.get(`/reportes/ventas?${params.toString()}`);
         return response.data;

@@ -4,7 +4,7 @@ const { getLocalDate } = require('../utils/date');
 const reporteController = {
     getVentasReport: async (req, res) => {
         try {
-            const { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta } = req.query;
+            const { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta, usuarioId } = req.query;
 
             let finalQuery = `
                 SELECT * FROM (
@@ -26,11 +26,14 @@ const reporteController = {
                                       FROM detalle_venta_cantina d 
                                       JOIN productos p ON d.producto_id = p.id 
                                       WHERE d.venta_id = v.id), 0)
-                        ) as ganancia,
-                        v.observaciones,
-                        'cantina' as categoria_venta,
-                        ARRAY(SELECT DISTINCT pv.metodo FROM pagos_ventas pv WHERE pv.venta_id = v.id) as metodos_pago
-                    FROM ventas_cantina v
+                         ) as ganancia,
+                         v.observaciones,
+                         'cantina' as categoria_venta,
+                         ARRAY(SELECT DISTINCT pv.metodo FROM pagos_ventas pv WHERE pv.venta_id = v.id) as metodos_pago,
+                         v.usuario_id,
+                         COALESCE(u.nombre, u.username) as usuario_nombre
+                     FROM ventas_cantina v
+                     LEFT JOIN usuarios u ON u.id = v.usuario_id
                     UNION ALL
                     SELECT 
                         p.id, 
@@ -40,12 +43,15 @@ const reporteController = {
                         p.metodo, 
                         p.monto,
                         p.monto as ganancia,
-                        p.observaciones,
-                        LOWER(c.tipo) as categoria_venta,
-                        ARRAY[p.metodo]::text[] as metodos_pago
-                    FROM pagos p
-                    JOIN turnos t ON p.turno_id = t.id
-                    JOIN canchas c ON t.cancha_id = c.id
+                         p.observaciones,
+                         LOWER(c.tipo) as categoria_venta,
+                         ARRAY[p.metodo]::text[] as metodos_pago,
+                         p.usuario_id,
+                         COALESCE(u.nombre, u.username) as usuario_nombre
+                     FROM pagos p
+                     JOIN turnos t ON p.turno_id = t.id
+                     JOIN canchas c ON t.cancha_id = c.id
+                     LEFT JOIN usuarios u ON u.id = p.usuario_id
                     UNION ALL
                     SELECT
                         i.id,
@@ -55,12 +61,15 @@ const reporteController = {
                         i.metodo_pago as metodo,
                         i.monto_abonado as monto,
                         0 as ganancia,
-                        NULL as observaciones,
-                        'torneo' as categoria_venta,
-                        ARRAY(SELECT DISTINCT pi.metodo FROM pagos_inscripcion pi WHERE pi.inscripcion_id = i.id) as metodos_pago
-                    FROM inscripciones i
-                    JOIN torneos t ON i.torneo_id = t.id
-                    JOIN jugadores j ON i.jugador_id = j.id
+                         NULL as observaciones,
+                         'torneo' as categoria_venta,
+                         ARRAY(SELECT DISTINCT pi.metodo FROM pagos_inscripcion pi WHERE pi.inscripcion_id = i.id) as metodos_pago,
+                         i.usuario_id,
+                         COALESCE(u.nombre, u.username) as usuario_nombre
+                     FROM inscripciones i
+                     JOIN torneos t ON i.torneo_id = t.id
+                     JOIN jugadores j ON i.jugador_id = j.id
+                     LEFT JOIN usuarios u ON u.id = i.usuario_id
                     WHERE i.pagado = TRUE
                 ) as combined
                 WHERE 1=1
@@ -92,6 +101,11 @@ const reporteController = {
             if (categoriaVenta) {
                 finalQuery += ` AND categoria_venta = $${paramCounter}`;
                 finalParams.push(categoriaVenta);
+                paramCounter++;
+            }
+            if (usuarioId) {
+                finalQuery += ` AND usuario_id = $${paramCounter}`;
+                finalParams.push(usuarioId);
                 paramCounter++;
             }
 

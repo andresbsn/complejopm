@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ReporteService, CategoriaService, CajaService } from '../services/api';
+import { ReporteService, CategoriaService, CajaService, UserService } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +24,8 @@ const ReportesPage = () => {
     const [tipo, setTipo] = useState('');
     const [categoriaVenta, setCategoriaVenta] = useState(''); // 'futbol', 'padel', 'cantina'
     const [metodoPago, setMetodoPago] = useState('');
+    const [usuarioId, setUsuarioId] = useState('');
+    const [usuarios, setUsuarios] = useState([]);
 
     // Filters for Jugadores
     const [jugadorSearch, setJugadorSearch] = useState('');
@@ -47,6 +49,7 @@ const ReportesPage = () => {
     useEffect(() => {
         if (isAdmin) {
             fetchCategorias();
+            fetchUsuarios();
         }
     }, [isAdmin]);
 
@@ -76,13 +79,22 @@ const ReportesPage = () => {
         }
     };
 
+    const fetchUsuarios = async () => {
+        try {
+            setUsuarios(await UserService.getAll());
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            alerts.error('Error', 'No se pudieron cargar los usuarios');
+        }
+    };
+
     const fetchReport = async (filtersOverride = null) => {
         setLoading(true);
         setReportData([]);
         try {
             let data = [];
             if (activeTab === 'ventas' && isAdmin) {
-                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta };
+                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta, usuarioId };
                 data = await ReporteService.getVentas(filters);
                 calculateStats(data);
                 setReportData(data);
@@ -191,7 +203,8 @@ const ReportesPage = () => {
             setTipo('');
             setCategoriaVenta('');
             setMetodoPago('');
-            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', categoriaVenta: '', metodoPago: '' });
+            setUsuarioId('');
+            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', categoriaVenta: '', metodoPago: '', usuarioId: '' });
         } else if (activeTab === 'jugadores') {
             setJugadorSearch('');
             setJugadorCategoria('');
@@ -269,7 +282,7 @@ const ReportesPage = () => {
                 doc.text(`Ganancia Estimada: $${formatCurrency(stats.totalGanancia)}`, 100, 36);
             }
             
-            const tableColumn = ["Fecha", "Descripción", "Obs.", "Tipo", "Método", "Monto"];
+            const tableColumn = ["Fecha", "Descripción", "Obs.", "Tipo", "Método", "Usuario", "Monto"];
             if (isAdmin) tableColumn.push("Ganancia");
 
             const tableRows = reportData.map(item => {
@@ -279,6 +292,7 @@ const ReportesPage = () => {
                     item.observaciones || '-',
                     item.tipo,
                     item.metodo || '-',
+                    item.usuario_nombre || 'Sin identificar',
                     `$${formatCurrency(item.monto)}`
                 ];
                 if (isAdmin) row.push((item.tipo === 'VENTA' || item.tipo === 'RESERVA') ? `$${formatCurrency(item.ganancia)}` : '-');
@@ -398,7 +412,7 @@ const ReportesPage = () => {
             {/* Filters for Ventas */}
             {activeTab === 'ventas' && (
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                    <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
                         <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Desde</label>
                             <input 
@@ -450,6 +464,21 @@ const ReportesPage = () => {
                                 <option value="qr">QR</option>
                                 <option value="cuenta_corriente">Cuenta Corriente</option>
                                 <option value="gastos_generales">Gastos Generales / Cortesía</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Usuario</label>
+                            <select
+                                value={usuarioId}
+                                onChange={(e) => setUsuarioId(e.target.value)}
+                                className="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            >
+                                <option value="">Todos</option>
+                                {usuarios.map(usuario => (
+                                    <option key={usuario.id} value={usuario.id}>
+                                        {usuario.nombre || usuario.username}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="flex gap-2">
@@ -600,8 +629,9 @@ const ReportesPage = () => {
                                             </span>
                                             <span className="text-xs text-gray-500">{formatArgentinaDateTime(item.fecha)}</span>
                                         </div>
-                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
-                                        {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
+                                         <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                                         {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
+                                         <p className="text-xs text-gray-500 mb-2">Usuario: {item.usuario_nombre || 'Sin identificar'}</p>
                                         <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50">
                                             <span className="text-gray-500 capitalize">{item.metodo || '-'}</span>
                                             <div>
@@ -779,9 +809,10 @@ const ReportesPage = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Obs.</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
                                     {isAdmin && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ganancia</th>}
                                 </tr>
                             )}
@@ -843,9 +874,12 @@ const ReportesPage = () => {
                                             {item.tipo}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                                        {item.metodo}
-                                    </td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                                         {item.metodo}
+                                     </td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                         {item.usuario_nombre || 'Sin identificar'}
+                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
                                         ${formatCurrency(item.monto)}
                                     </td>
