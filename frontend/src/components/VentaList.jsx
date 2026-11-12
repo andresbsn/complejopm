@@ -3,7 +3,7 @@ import { VentaService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
-import { getLocalDate } from '../utils/date';
+import { getLocalDate, formatArgentinaDateTime } from '../utils/date';
 
 const VentaList = ({ refreshTrigger }) => {
     const [ventas, setVentas] = useState([]);
@@ -106,7 +106,7 @@ const VentaList = ({ refreshTrigger }) => {
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <span className="text-sm font-medium text-gray-500">#{venta.id}</span>
-                                    <p className="text-sm text-gray-900">{new Date(venta.fecha).toLocaleString()}</p>
+                                    <p className="text-sm text-gray-900">{formatArgentinaDateTime(venta.fecha)}</p>
                                 </div>
                                 <span className="text-lg font-bold text-gray-900">${formatCurrency(venta.total)}</span>
                             </div>
@@ -162,7 +162,7 @@ const VentaList = ({ refreshTrigger }) => {
                             {ventas.map(venta => (
                                 <tr key={venta.id} className="hover:bg-gray-50 transition-colors duration-150">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{venta.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(venta.fecha).toLocaleString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatArgentinaDateTime(venta.fecha)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{venta.metodo_pago || '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">${formatCurrency(venta.total)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

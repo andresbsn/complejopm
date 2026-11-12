@@ -3,6 +3,7 @@ import { CajaService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { alerts } from '../utils/alerts';
+import { formatArgentinaDateTime, formatArgentinaTime } from '../utils/date';
 
 const CajaPage = () => {
     const { user } = useAuth();
@@ -304,7 +305,7 @@ const CajaPage = () => {
                                     <div className="space-y-3">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Fecha Apertura:</span>
-                                            <span className="font-medium">{new Date(caja.fecha_apertura).toLocaleString()}</span>
+                                            <span className="font-medium">{formatArgentinaDateTime(caja.fecha_apertura)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Saldo Inicial:</span>
@@ -364,7 +365,7 @@ const CajaPage = () => {
                                                             {mov.tipo_movimiento}
                                                         </span>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-gray-500">{new Date(mov.fecha).toLocaleTimeString()}</span>
+                                                            <span className="text-xs text-gray-500">{formatArgentinaTime(mov.fecha)}</span>
                                                             <button 
                                                                 onClick={() => handleVerDetalle(mov)}
                                                                 className="text-indigo-600 hover:text-indigo-900"
@@ -406,7 +407,7 @@ const CajaPage = () => {
                                                     currentMovimientos.map((mov, index) => (
                                                         <tr key={index}>
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                                                {new Date(mov.fecha).toLocaleTimeString()}
+                                                                {formatArgentinaTime(mov.fecha)}
                                                             </td>
                                                             <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -490,11 +491,11 @@ const CajaPage = () => {
                                 <div className="text-sm space-y-1 mb-3">
                                     <div className="flex justify-between">
                                         <span className="text-gray-500">Apertura:</span>
-                                        <span className="text-gray-900">{new Date(cajas.fecha_apertura).toLocaleString()}</span>
+                                        <span className="text-gray-900">{formatArgentinaDateTime(cajas.fecha_apertura)}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-500">Cierre:</span>
-                                        <span className="text-gray-900">{cajas.fecha_cierre ? new Date(cajas.fecha_cierre).toLocaleString() : '-'}</span>
+                                        <span className="text-gray-900">{cajas.fecha_cierre ? formatArgentinaDateTime(cajas.fecha_cierre) : '-'}</span>
                                     </div>
                                 </div>
                                 <div className="border-t pt-2 flex justify-between items-center text-sm">
@@ -528,8 +529,8 @@ const CajaPage = () => {
                                 {historial.map((cajas) => (
                                     <tr key={cajas.id}>
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">#{cajas.id}</td>
-                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{new Date(cajas.fecha_apertura).toLocaleString()}</td>
-                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{cajas.fecha_cierre ? new Date(cajas.fecha_cierre).toLocaleString() : '-'}</td>
+                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{formatArgentinaDateTime(cajas.fecha_apertura)}</td>
+                                        <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{cajas.fecha_cierre ? formatArgentinaDateTime(cajas.fecha_cierre) : '-'}</td>
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">${formatCurrency(cajas.saldo_inicial)}</td>
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">{cajas.saldo_final ? `$${formatCurrency(cajas.saldo_final)}` : '-'}</td>
                                         <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
@@ -570,7 +571,7 @@ const CajaPage = () => {
                                         <div className="mt-4 space-y-3 text-sm text-gray-600">
                                             <div className="flex justify-between border-b pb-1">
                                                 <span className="font-semibold">Fecha:</span>
-                                                <span>{new Date(selectedMov.fecha).toLocaleString()}</span>
+                                                <span>{formatArgentinaDateTime(selectedMov.fecha)}</span>
                                             </div>
                                             
                                             {selectedMov.tipo_movimiento !== 'VENTA' && !selectedMov.descripcion?.includes('Venta #') && (

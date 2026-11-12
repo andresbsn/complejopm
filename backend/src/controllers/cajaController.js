@@ -50,7 +50,9 @@ const CajaController = {
     getMovimientos: async (req, res) => {
         try {
             const { id } = req.params;
-            const movimientos = await CajaModel.getMovimientos(id, req.user?.rol !== 'admin');
+            // Mostrar todos los movimientos en Caja, independientemente del medio de pago.
+            // El frontend separa los movimientos en efectivo para calcular el saldo físico.
+            const movimientos = await CajaModel.getMovimientos(id, false);
             res.json(movimientos);
         } catch (error) {
             console.error(error);

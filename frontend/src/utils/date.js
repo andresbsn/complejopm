@@ -26,3 +26,16 @@ export const formatArgentinaDateTime = (value) => {
         timeStyle: 'short'
     }).format(date);
 };
+
+export const formatArgentinaTime = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+    }).format(date);
+};
