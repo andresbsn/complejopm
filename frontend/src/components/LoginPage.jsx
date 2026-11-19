@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../../assets/logo.jpg';
 
 const LoginPage = () => {
     const [username, setUsername] = useState('');
@@ -30,10 +29,10 @@ const LoginPage = () => {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,.34),_transparent_40%),radial-gradient(circle_at_bottom_left,_rgba(124,58,237,.24),_transparent_35%)]" />
             <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-white p-6 shadow-2xl sm:p-8">
                 <div className="mb-8 text-center">
-                    <div className="mx-auto h-28 w-28 overflow-hidden rounded-3xl bg-slate-950 shadow-xl shadow-indigo-950/20 ring-4 ring-indigo-50">
-                        <img src={logo} alt="Logo de Complejo El Clasico" className="h-full w-full object-cover object-center" />
+                    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 text-3xl font-extrabold tracking-tight text-white shadow-xl shadow-indigo-950/20 ring-4 ring-indigo-50" aria-label="Logo de PM Padel">
+                        PM
                     </div>
-                    <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-slate-900">Complejo El Clasico</h1>
+                    <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-slate-900">PM Padel</h1>
                     <p className="mt-2 text-sm text-slate-500">Ingresá para gestionar tu complejo</p>
                 </div>
 
