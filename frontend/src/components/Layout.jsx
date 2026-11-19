@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Icon from './Icon';
+import logo from '../../assets/logo.jpg';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -55,8 +56,8 @@ const Layout = ({ children }) => {
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
           <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="Ir al inicio">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-xs font-extrabold tracking-tight text-white shadow-sm ring-1 ring-indigo-200" aria-label="Logo de PM Padel">
-              PM
+            <span className="h-9 w-9 shrink-0 overflow-hidden rounded-xl bg-slate-950 shadow-sm ring-1 ring-slate-200">
+              <img src={logo} alt="Logo de PM Padel" className="h-full w-full object-cover object-center" />
             </span>
             {(isSidebarOpen || isMobileMenuOpen) && (
               <span className="truncate text-base font-extrabold tracking-tight text-indigo-600">PM Padel</span>
