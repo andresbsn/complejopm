@@ -135,21 +135,21 @@ const ProveedoresPage = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Sección Proveedores</h2>
-                    <p className="text-gray-500 text-sm">Gestión de proveedores, cuentas y órdenes de compra</p>
+                     <h2 className="text-2xl font-bold tracking-tight text-slate-900">Proveedores</h2>
+                     <p className="text-sm text-slate-500">Gestioná proveedores, cuentas y órdenes de compra.</p>
                 </div>
                 <div className="space-x-2">
                      <button 
                         onClick={() => { setEditingProvider(null); setFormData({ nombre: '', contacto: '', telefono: '', email: '' }); setIsFormOpen(true); }}
-                        className="bg-white border border-indigo-600 text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-indigo-50 shadow-sm"
+                        className="ui-secondary-button"
                     >
                         + Nuevo Proveedor
                     </button>
                     <button 
                         onClick={() => { setEditingCompra(null); setIsCompraFormOpen(true); }}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 shadow-sm"
+                        className="ui-primary-button"
                     >
                         + Nueva Orden de Compra
                     </button>
@@ -157,7 +157,7 @@ const ProveedoresPage = () => {
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200">
+             <div className="border-b border-slate-200">
                 <nav className="-mb-px flex space-x-8">
                     <button
                         onClick={() => setActiveTab('proveedores')}
@@ -175,13 +175,13 @@ const ProveedoresPage = () => {
             </div>
 
             {/* Search */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+             <div className="ui-card p-4">
                 <input
                     type="text"
                     placeholder={activeTab === 'proveedores' ? "🔍 Buscar proveedor por nombre o contacto..." : "🔍 Buscar compra por ID o proveedor..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                    className="ui-input"
                 />
             </div>
 

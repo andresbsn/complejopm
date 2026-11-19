@@ -4,7 +4,7 @@ import { formatCurrency } from '../utils/formatters';
 const ProductoList = ({ productos, onEdit, onDelete }) => {
     if (!productos || productos.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow-sm border border-gray-100">
+            <div className="ui-card p-8 text-center text-slate-500">
                 <p className="text-lg">No se encontraron productos.</p>
                 <p className="text-sm">Prueba ajustando los filtros o la búsqueda.</p>
             </div>
@@ -16,7 +16,7 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
                 {productos.map((producto) => (
-                    <div key={producto.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div key={producto.id} className="ui-card p-4">
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex-1">
                                 <h3 className="text-base font-semibold text-gray-900">{producto.nombre}</h3>
@@ -76,10 +76,10 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-hidden bg-white shadow-sm rounded-lg border border-gray-200">
+            <div className="ui-table-shell hidden md:block">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full">
+                        <thead>
                             <tr>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
@@ -91,7 +91,7 @@ const ProductoList = ({ productos, onEdit, onDelete }) => {
                                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody>
                             {productos.map((producto) => (
                                 <tr key={producto.id} className="hover:bg-gray-50 transition-colors duration-150">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{producto.nombre}</td>

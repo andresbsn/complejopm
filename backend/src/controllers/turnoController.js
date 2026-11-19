@@ -16,7 +16,7 @@ const TurnoController = {
                 // pero para este ejemplo simple:
                 const dia_semana = new Date(fecha + 'T12:00:00').getDay();
 
-                turno = await TurnoModel.createFijo({ ...restoDatos, dia_semana });
+                turno = await TurnoModel.createFijo({ ...restoDatos, dia_semana, vigente_desde: fecha });
             } else {
                 turno = await TurnoModel.create({ ...req.body, usuario_creacion_id: req.user.id });
             }

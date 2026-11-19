@@ -105,10 +105,10 @@ const JugadoresPage = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
             <div className="sm:flex sm:items-center">
                 <div className="sm:flex-auto">
-                    <h1 className="text-xl font-semibold text-gray-900">Jugadores</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Jugadores</h1>
                     <p className="mt-2 text-sm text-gray-700">
                         Lista de todos los jugadores registrados en el sistema.
                     </p>
@@ -117,7 +117,7 @@ const JugadoresPage = () => {
                     <button
                         type="button"
                         onClick={openNewJugadorModal}
-                        className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+                        className="ui-primary-button w-full sm:w-auto"
                     >
                         Agregar Jugador
                     </button>
@@ -128,7 +128,7 @@ const JugadoresPage = () => {
                 <input
                     type="text"
                     placeholder="Buscar por nombre..."
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className="ui-input"
                     value={searchTerm}
                     onChange={handleSearch}
                 />
@@ -146,7 +146,7 @@ const JugadoresPage = () => {
                                 <div className="text-center py-4 text-gray-500">No se encontraron jugadores.</div>
                             ) : (
                                 jugadores.map((jugador) => (
-                                    <div key={jugador.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                    <div key={jugador.id} className="ui-card p-4">
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="text-lg font-medium text-gray-900">{jugador.nombre}</h3>
                                             <span className={`text-sm font-semibold ${
@@ -180,9 +180,9 @@ const JugadoresPage = () => {
                         </div>
 
                         {/* Desktop Table View */}
-                        <div className="hidden md:block overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
+                        <div className="ui-table-shell hidden md:block">
+                            <table className="min-w-full">
+                                <thead>
                                     <tr>
                                         <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nombre</th>
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Teléfono</th>
@@ -194,7 +194,7 @@ const JugadoresPage = () => {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
+                            <tbody>
                                     {loading ? (
                                         <tr>
                                             <td colSpan="6" className="py-4 text-center text-sm text-gray-500">Cargando...</td>

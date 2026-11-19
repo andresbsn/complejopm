@@ -89,7 +89,8 @@ const TurnoList = () => {
                                             hora_fin: turno.hora_fin,
                                             cliente_nombre: turno.cliente_nombre,
                                             cliente_telefono: turno.cliente_telefono,
-                                            monto_total: turno.monto_total
+                                            monto_total: turno.monto_total,
+                                            reserva_fija_id: turno.reserva_fija_id || turno.id.toString().replace('fijo_', '')
                                         }).then(newTurno => {
                                             fetchTurnos(); 
                                             setSelectedTurno(newTurno); 

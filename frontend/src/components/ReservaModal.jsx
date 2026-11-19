@@ -101,20 +101,20 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="ui-modal-backdrop" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
 
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                <div className="ui-modal max-w-lg text-left">
                     <form onSubmit={handleSubmit}>
-                        <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[80vh] overflow-y-auto">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                        <div className="ui-modal-body">
+                            <h3 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900" id="modal-title">
                                 Nueva Reserva
                             </h3>
                             
-                            <div className="mb-4 text-sm text-gray-500 bg-gray-50 p-3 rounded">
+                            <div className="mb-5 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
                                 <p><strong>Cancha:</strong> {cancha.nombre}</p>
                                 <p><strong>Fecha:</strong> {date}</p>
                                 <p><strong>Horario:</strong> {timeSlot.start} - {timeSlot.end}</p>
@@ -128,22 +128,22 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
 
                             <div className="space-y-4">
                                 <div className="relative">
-                                    <label className="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
+                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Nombre del cliente</label>
                                     <input
                                         type="text"
                                         required
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                         className="ui-input"
                                         value={formData.cliente_nombre}
                                         onChange={handleNameChange}
                                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                     />
                                     {showSuggestions && (
-                                        <div className="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                         <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
                                             {jugadoresSuggestions.length > 0 ? (
                                                 jugadoresSuggestions.map(jugador => (
                                                     <div
                                                         key={jugador.id}
-                                                        className="px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700"
+                                                        className="cursor-pointer px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50"
                                                         onClick={() => selectJugador(jugador)}
                                                     >
                                                         <span className="font-bold">{jugador.nombre}</span>
@@ -163,16 +163,16 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                                     {/* Ideally we would have a quick create button here, but for now we rely on the manual input if not found */}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Teléfono</label>
                                     <input
                                         type="text"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                         className="ui-input"
                                         value={formData.cliente_telefono}
                                         onChange={e => setFormData({...formData, cliente_telefono: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Precio Total</label>
+                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Precio total</label>
                                     <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <span className="text-gray-500 sm:text-sm">$</span>
@@ -180,7 +180,7 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                                         <input
                                             type="number"
                                             required
-                                            className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                             className="ui-input pl-7"
                                             value={formData.monto_total}
                                             onChange={e => setFormData({...formData, monto_total: e.target.value})}
                                         />
@@ -200,17 +200,17 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <div className="ui-modal-footer sm:flex-row-reverse">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                                className="ui-primary-button w-full sm:w-auto"
                             >
                                 {loading ? 'Reservando...' : 'Confirmar Reserva'}
                             </button>
                             <button
                                 type="button"
-                                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                className="ui-secondary-button mt-3 w-full sm:mt-0 sm:w-auto"
                                 onClick={onClose}
                             >
                                 Cancelar

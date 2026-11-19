@@ -92,7 +92,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="ui-card p-6">
             <h3 className="text-xl font-bold mb-4">{initialData ? 'Editar Compra' : 'Nueva Compra'}</h3>
             
             <form onSubmit={handleSubmit}>
@@ -101,7 +101,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
                     <select 
                         value={proveedorId}
                         onChange={(e) => setProveedorId(e.target.value)}
-                        className="shadow border rounded w-full py-2 px-3 text-gray-700"
+                        className="ui-input"
                         disabled={!!initialData}
                     >
                         <option value="">Seleccione...</option>
@@ -116,7 +116,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
                     <textarea 
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="shadow border rounded w-full py-2 px-3 text-gray-700"
+                        className="ui-input"
                     />
                 </div>
 
@@ -205,7 +205,7 @@ const CompraForm = ({ onCompraSaved, onCancel, proveedores, initialData = null }
                     </div>
 
                     <div className="flex gap-2">
-                         <button type="button" onClick={onCancel} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                         <button type="button" onClick={onCancel} className="ui-secondary-button">
                             Cancelar
                         </button>
                         {(!initialData || initialData.estado === 'PENDIENTE') && (

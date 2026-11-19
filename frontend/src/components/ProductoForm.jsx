@@ -87,9 +87,9 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
     };
 
     return (
-        <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-6 mb-6">
+        <div className="p-1">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-800">
+                <h3 className="text-xl font-extrabold tracking-tight text-slate-900">
                     {productToEdit ? 'Editar Producto' : 'Agregar Nuevo Producto'}
                 </h3>
                 {productToEdit && (
@@ -110,7 +110,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <input
                             type="text" required value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         />
                     </div>
                     
@@ -119,7 +119,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
                         <select
                             value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         >
                             <option value="bebida">Bebida</option>
                             <option value="snack">Snack</option>
@@ -133,7 +133,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
                         <select
                             value={estado} onChange={(e) => setEstado(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         >
                             <option value="ACTIVO">Activo</option>
                             <option value="INACTIVO">Inactivo</option>
@@ -150,7 +150,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                             <input
                                 type="number" step="0.01" required value={precio}
                                 onChange={(e) => setPrecio(e.target.value)}
-                                className="block w-full rounded-lg border-gray-300 pl-7 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                                className="ui-input pl-7"
                             />
                         </div>
                     </div>
@@ -165,7 +165,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                             <input
                                 type="number" step="0.01" value={costo}
                                 onChange={(e) => setCosto(e.target.value)}
-                                className="block w-full rounded-lg border-gray-300 pl-7 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                                className="ui-input pl-7"
                             />
                         </div>
                     </div>
@@ -176,7 +176,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <input
                             type="number" value={stock}
                             onChange={(e) => setStock(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         />
                     </div>
 
@@ -186,7 +186,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <input
                             type="number" value={stockMinimo}
                             onChange={(e) => setStockMinimo(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         />
                     </div>
 
@@ -195,7 +195,7 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">Proveedor</label>
                         <select
                             value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}
-                            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                            className="ui-input"
                         >
                             <option value="">-- Seleccionar Proveedor --</option>
                             {proveedores.map(p => (
@@ -210,14 +210,14 @@ const ProductoForm = ({ productToEdit, onSuccess, onCancel }) => {
                     {productToEdit && (
                         <button
                             type="button" onClick={onCancel}
-                            className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                            className="ui-secondary-button"
                         >
                             Cancelar
                         </button>
                     )}
                     <button
                         type="submit" disabled={loading}
-                        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="ui-primary-button"
                     >
                         {loading ? 'Guardando...' : (productToEdit ? 'Actualizar Producto' : 'Guardar Producto')}
                     </button>

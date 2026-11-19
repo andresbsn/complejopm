@@ -3,7 +3,11 @@ const pool = require('../config/db');
 const TurnoModel = {
     // Crear un nuevo turno
     async create(data) {
-        const { cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado = 'confirmado', usuario_creacion_id } = data;
+        const {
+            cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre,
+            cliente_telefono, monto_total, estado = 'confirmado',
+            usuario_creacion_id, reserva_fija_id = null
+        } = data;
 
         // Solo validar superposición si NO es un turno cancelado
         // Los turnos cancelados no ocupan el slot realmente
@@ -25,27 +29,52 @@ const TurnoModel = {
         }
 
         const query = `
-      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado, usuario_creacion_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO turnos (cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado, usuario_creacion_id, reserva_fija_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
-        const values = [cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total, estado, usuario_creacion_id];
+        const values = [
+            cancha_id, fecha, hora_inicio, hora_fin, cliente_nombre,
+            cliente_telefono, monto_total, estado, usuario_creacion_id,
+            reserva_fija_id
+        ];
         const result = await pool.query(query, values);
         return result.rows[0];
     },
 
     // Crear reserva fija
     async createFijo(data) {
-        const { cancha_id, dia_semana, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total } = data;
+        const {
+            cancha_id, dia_semana, hora_inicio, hora_fin, cliente_nombre,
+            cliente_telefono, monto_total, vigente_desde
+        } = data;
+        const client = await pool.connect();
 
-        const query = `
-            INSERT INTO reservas_fijas (cancha_id, dia_semana, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING *
-        `;
-        const values = [cancha_id, dia_semana, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total];
-        const result = await pool.query(query, values);
-        return result.rows[0];
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(`
+                INSERT INTO reservas_fijas
+                    (cancha_id, dia_semana, hora_inicio, hora_fin,
+                     cliente_nombre, cliente_telefono, monto_total)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING *
+            `, [cancha_id, dia_semana, hora_inicio, hora_fin, cliente_nombre, cliente_telefono, monto_total]);
+
+            const reservaFija = result.rows[0];
+            await client.query(`
+                INSERT INTO reservas_fijas_precios
+                    (reserva_fija_id, monto_total, vigente_desde)
+                VALUES ($1, $2, COALESCE($3::timestamp, CURRENT_TIMESTAMP))
+            `, [reservaFija.id, monto_total, vigente_desde || null]);
+
+            await client.query('COMMIT');
+            return reservaFija;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     },
 
     // Obtener turnos por fecha y opcionalmente por cancha
@@ -77,15 +106,26 @@ const TurnoModel = {
         const diaSemana = new Date(fecha + 'T12:00:00').getDay();
 
         let queryFijos = `
-            SELECT rf.*, c.nombre as cancha_nombre, c.tipo as cancha_tipo,
+            SELECT rf.id, rf.cancha_id, rf.dia_semana, rf.hora_inicio,
+            rf.hora_fin, rf.cliente_nombre, rf.cliente_telefono,
+            rf.created_at, c.nombre as cancha_nombre, c.tipo as cancha_tipo,
+            COALESCE((
+                SELECT rfp.monto_total
+                FROM reservas_fijas_precios rfp
+                WHERE rfp.reserva_fija_id = rf.id
+                  AND rfp.vigente_desde <= ($2::date + rf.hora_inicio)
+                  AND (rfp.vigente_hasta IS NULL OR rfp.vigente_hasta >= ($2::date + rf.hora_inicio))
+                ORDER BY rfp.vigente_desde DESC
+                LIMIT 1
+            ), rf.monto_total) AS monto_total,
             0 as monto_pagado
             FROM reservas_fijas rf
             JOIN canchas c ON rf.cancha_id = c.id
             WHERE rf.dia_semana = $1
         `;
-        const valuesFijos = [diaSemana];
+        const valuesFijos = [diaSemana, fecha];
         if (cancha_id) {
-            queryFijos += ` AND rf.cancha_id = $2`;
+            queryFijos += ` AND rf.cancha_id = $3`;
             valuesFijos.push(cancha_id);
         }
 
@@ -109,7 +149,8 @@ const TurnoModel = {
                     id: `fijo_${fijo.id}`, // ID virtual para el frontend
                     fecha: fecha,
                     estado: 'fijo',
-                    es_fijo: true
+                    es_fijo: true,
+                    reserva_fija_id: fijo.id
                 });
             }
         });

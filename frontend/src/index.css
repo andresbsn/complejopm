@@ -1,3 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8fafc;
+  }
+
+  body {
+    min-width: 320px;
+    color: #172033;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid rgba(79, 70, 229, .28);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .ui-card {
+    @apply rounded-xl border border-slate-200/80 bg-white shadow-sm;
+  }
+
+  .ui-page-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .ui-primary-button {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-[0_8px_18px_rgba(79,70,229,0.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_10px_22px_rgba(79,70,229,0.3)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .ui-secondary-button {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 hover:shadow-md;
+  }
+
+  .ui-icon-button {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700;
+  }
+
+  .ui-status-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .ui-input {
+    @apply min-h-12 w-full rounded-xl border-slate-200 bg-slate-50/40 px-3.5 text-[15px] text-slate-800 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition duration-200 placeholder:text-slate-400 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10;
+  }
+
+  .ui-modal-backdrop {
+    @apply fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/65 p-4 backdrop-blur-[4px];
+  }
+
+  .ui-modal {
+    @apply my-auto flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-[1.35rem] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.26)] ring-1 ring-white/70;
+  }
+
+  .ui-modal-header {
+    @apply flex items-start justify-between gap-4 border-b border-slate-100/90 px-5 py-5 sm:px-7;
+  }
+
+  .ui-modal-body {
+    @apply min-h-0 overflow-y-auto px-5 py-6 sm:px-7;
+  }
+
+  .ui-modal-footer {
+    @apply flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/80 px-5 py-5 sm:flex-row sm:justify-end sm:px-7;
+  }
+
+  .ui-table-shell {
+    @apply overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm;
+  }
+
+  .ui-table-shell thead {
+    @apply bg-slate-50;
+  }
+
+  .ui-table-shell th {
+    @apply px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500;
+  }
+
+  .ui-table-shell td {
+    @apply border-t border-slate-100 px-4 py-3 text-sm text-slate-600;
+  }
+
+  .ui-table-shell tbody tr {
+    @apply transition-colors hover:bg-slate-50/70;
+  }
+}

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Icon from './Icon';
+import logo from '../../assets/logo.jpg';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -8,173 +10,147 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const isAdmin = user?.rol === 'admin';
-
   const [currentTime, setCurrentTime] = useState(new Date());
 
   React.useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Close mobile menu when route changes
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-
   const allNavItems = [
-    { name: 'Dashboard', path: '/', icon: '📊' },
-    { name: 'Productos', path: '/productos', icon: '📦', adminOnly: true },
-    { name: 'Proveedores', path: '/proveedores', icon: '🏢', adminOnly: true },
-    { name: 'Ventas', path: '/ventas', icon: '💰' },
-    { name: 'Reportes', path: '/reportes', icon: '📈' },
-    // { name: 'Canchas', path: '/canchas', icon: '⚽', adminOnly: true },
-    { name: 'Reservas Padel', path: '/reservas/padel', icon: '🎾' },
-    { name: 'Reservas Futbol', path: '/reservas/futbol', icon: '🥅' },
-    { name: 'Torneos', path: '/torneos', icon: '🏆' },
-    { name: 'Jugadores', path: '/jugadores', icon: '👥' },
-    { name: 'Caja', path: '/caja', icon: '💸' },
-    { name: 'Gastos', path: '/gastos', icon: '💸' },
-    { name: 'Configuración', path: '/configuracion', icon: '⚙️', adminOnly: true },
+    { name: 'Dashboard', path: '/', icon: 'dashboard', section: 'General' },
+    { name: 'Productos', path: '/productos', icon: 'box', adminOnly: true, section: 'Administración' },
+    { name: 'Proveedores', path: '/proveedores', icon: 'building', adminOnly: true, section: 'Administración' },
+    { name: 'Ventas', path: '/ventas', icon: 'money', section: 'Operación' },
+    { name: 'Reportes', path: '/reportes', icon: 'chart', section: 'Finanzas' },
+    { name: 'Reservas Pádel', path: '/reservas/padel', icon: 'tennis', section: 'Operación' },
+    { name: 'Reservas Fútbol', path: '/reservas/futbol', icon: 'football', section: 'Operación' },
+    { name: 'Torneos', path: '/torneos', icon: 'trophy', section: 'Operación' },
+    { name: 'Jugadores', path: '/jugadores', icon: 'users', section: 'Operación' },
+    { name: 'Caja', path: '/caja', icon: 'cash', section: 'Finanzas' },
+    { name: 'Gastos', path: '/gastos', icon: 'money', section: 'Finanzas' },
+    { name: 'Configuración', path: '/configuracion', icon: 'settings', adminOnly: true, section: 'Administración' },
   ];
 
   const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
+  const activeItem = navItems.find(item => item.path === location.pathname)
+    || navItems.find(item => item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
-      {/* Mobile Overlay */}
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+        <div
+          className="fixed inset-0 z-20 bg-slate-950/50 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`
-          fixed lg:static inset-y-0 left-0 z-30
-          bg-white shadow-lg transition-all duration-300 ease-in-out flex flex-col
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isSidebarOpen ? 'w-64' : 'w-20'}
-        `}
+        className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-white shadow-xl transition-all duration-300 ease-in-out lg:static ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } ${isSidebarOpen ? 'w-64' : 'w-20'}`}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
-          {(isSidebarOpen || isMobileMenuOpen) && (
-            <span className="text-xl font-bold text-indigo-600 tracking-tight">
-              PM Padel
+        <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
+          <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="Ir al inicio">
+            <span className="h-9 w-9 shrink-0 overflow-hidden rounded-xl bg-slate-950 shadow-sm ring-1 ring-slate-200">
+              <img src={logo} alt="Logo de Complejo El Clasico" className="h-full w-full object-cover object-center" />
             </span>
-          )}
+            {(isSidebarOpen || isMobileMenuOpen) && (
+              <span className="truncate text-base font-extrabold tracking-tight text-indigo-600">Complejo El Clasico</span>
+            )}
+          </Link>
           <button
-            onClick={toggleSidebar}
-            className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 text-gray-500 focus:outline-none"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="ui-icon-button hidden lg:inline-flex"
+            aria-label={isSidebarOpen ? 'Contraer menú' : 'Expandir menú'}
           >
-            {isSidebarOpen ? '◀' : '▶'}
+            <span aria-hidden="true" className="text-xs">{isSidebarOpen ? '◀' : '▶'}</span>
           </button>
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-500 focus:outline-none"
-          >
-            ✕
+          <button onClick={() => setIsMobileMenuOpen(false)} className="ui-icon-button lg:hidden" aria-label="Cerrar menú">
+            <Icon name="close" size={20} />
           </button>
         </div>
 
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+        <nav className="flex-1 overflow-y-auto px-2 py-4">
+          {navItems.map((item, index) => {
+            const isActive = item.path === '/'
+              ? location.pathname === '/'
+              : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+            const showSection = isSidebarOpen && (index === 0 || navItems[index - 1].section !== item.section);
             return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 group ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-xl">{item.icon}</span>
-                {(isSidebarOpen || isMobileMenuOpen) && (
-                  <span className="ml-3 font-medium">{item.name}</span>
+              <React.Fragment key={item.name}>
+                {showSection && (
+                  <p className="px-4 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">{item.section}</p>
                 )}
-                {!isSidebarOpen && !isMobileMenuOpen && (
-                  <div className="absolute left-full rounded-md px-2 py-1 ml-6 bg-gray-900 text-white text-sm invisible opacity-20 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 z-50 whitespace-nowrap">
-                    {item.name}
-                  </div>
-                )}
-              </Link>
+                <Link
+                  to={item.path}
+                  className={`group relative flex min-h-11 items-center rounded-lg px-4 py-3 transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-indigo-50 font-semibold text-indigo-700'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon name={item.icon} size={20} />
+                  {(isSidebarOpen || isMobileMenuOpen) && <span className="ml-3 font-medium">{item.name}</span>}
+                  {!isSidebarOpen && !isMobileMenuOpen && (
+                    <span className="invisible absolute left-full z-50 ml-6 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-sm text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
+                      {item.name}
+                    </span>
+                  )}
+                </Link>
+              </React.Fragment>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
+        <div className="border-t border-slate-100 p-4">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold flex-shrink-0">
-              {user?.username.charAt(0).toUpperCase()}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-600">
+              {user?.username?.charAt(0).toUpperCase()}
             </div>
             {(isSidebarOpen || isMobileMenuOpen) && (
-              <div className="ml-3 overflow-hidden">
-                <p className="text-sm font-medium text-gray-700 truncate">{user?.nombre}</p>
-                <button 
-                    onClick={logout}
-                    className="text-xs text-red-500 hover:text-red-700"
-                >
-                    Cerrar Sesión
-                </button>
+              <div className="ml-3 min-w-0 overflow-hidden">
+                <p className="truncate text-sm font-medium text-slate-700">{user?.nombre}</p>
+                <button onClick={logout} className="text-xs text-red-500 hover:text-red-700">Cerrar sesión</button>
               </div>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
-        {/* Header */}
-        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 lg:px-6 z-10">
-          <div className="flex items-center">
+      <div className="flex w-full flex-1 flex-col overflow-hidden">
+        <header className="z-10 flex h-16 items-center justify-between border-b border-slate-100 bg-white px-4 shadow-sm lg:px-6">
+          <div className="flex min-w-0 items-center">
             <button
-              onClick={toggleMobileMenu}
-              className="lg:hidden p-2 -ml-2 mr-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="ui-icon-button -ml-2 mr-2 lg:hidden"
+              aria-label="Abrir menú"
             >
-              ☰
+              <Icon name="menu" size={21} />
             </button>
-            <h1 className="text-lg lg:text-2xl font-semibold text-gray-800 truncate">
-              {navItems.find((item) => item.path === location.pathname)?.name ||
-                'Dashboard'}
-            </h1>
+            <div className="min-w-0">
+              <p className="hidden text-[10px] font-bold uppercase tracking-widest text-indigo-600 sm:block">Complejo El Clasico</p>
+              <h1 className="truncate text-lg font-bold text-slate-800 lg:text-xl">{activeItem?.name || 'Dashboard'}</h1>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 lg:space-x-4">
-            <div className="hidden sm:flex items-center px-3 py-1 bg-gray-50 rounded-full border border-gray-100">
-              <span className="text-gray-400 mr-2">🕒</span>
-              <span className="text-sm font-medium text-gray-600 tabular-nums">
-                {formatTime(currentTime)}
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="hidden items-center rounded-full border border-slate-100 bg-slate-50 px-3 py-1 sm:flex">
+              <span className="mr-2 text-slate-400">●</span>
+              <span className="tabular-nums text-sm font-medium text-slate-600">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
             </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600">
-              🔔
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600">
-              ⚙️
-            </button>
+            <button aria-label="Notificaciones" className="ui-icon-button"><Icon name="bell" size={19} /></button>
+            <button aria-label="Configuración rápida" className="ui-icon-button"><Icon name="settings" size={19} /></button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 lg:p-6">
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

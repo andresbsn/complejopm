@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GastoService } from '../services/api';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
+import PageHeader from './PageHeader';
 
 const GastosPage = () => {
     const [gastos, setGastos] = useState([]);
@@ -62,10 +63,10 @@ const GastosPage = () => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Gastos Generales</h2>
+            <PageHeader title="Gastos generales" description="Registrá y consultá los egresos del complejo." />
             
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">Registrar Nuevo Gasto</h3>
+            <div className="ui-card p-6">
+                <h3 className="mb-4 text-lg font-bold text-slate-900">Registrar nuevo gasto</h3>
                 <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1 w-full">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
@@ -73,7 +74,7 @@ const GastosPage = () => {
                             type="text"
                             value={descripcion}
                             onChange={(e) => setDescripcion(e.target.value)}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="ui-input"
                             placeholder="Ej: Limpieza, Luz, etc."
                         />
                          </div>
@@ -86,8 +87,8 @@ const GastosPage = () => {
                             <input
                                 type="number"
                                 value={monto}
-                                onChange={(e) => setMonto(e.target.value)}
-                                className="pl-7 w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            onChange={(e) => setMonto(e.target.value)}
+                            className="ui-input pl-7"
                                 placeholder="0.00"
                                 step="0.01"
                                  min="0.01"
@@ -99,7 +100,7 @@ const GastosPage = () => {
                         <select
                             value={metodoPago}
                             onChange={(e) => setMetodoPago(e.target.value)}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="ui-input"
                             required
                         >
                             <option value="">Seleccionar...</option>
@@ -112,7 +113,7 @@ const GastosPage = () => {
                     </div>
                     <button
                         type="submit"
-                        className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 font-medium whitespace-nowrap"
+                        className="ui-primary-button whitespace-nowrap bg-rose-600 hover:bg-rose-700"
                     >
                         Registrar Gasto
                     </button>
@@ -127,7 +128,7 @@ const GastosPage = () => {
                     <div className="text-center py-4 text-gray-500">No hay gastos registrados.</div>
                 ) : (
                     gastos.map((gasto) => (
-                        <div key={gasto.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <div key={gasto.id} className="ui-card p-4">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <h4 className="text-base font-semibold text-gray-900">{gasto.descripcion}</h4>
@@ -155,9 +156,9 @@ const GastosPage = () => {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="ui-table-shell hidden md:block">
+                <table className="min-w-full">
+                    <thead>
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
@@ -167,7 +168,7 @@ const GastosPage = () => {
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                         {loading ? (
                             <tr><td colSpan="6" className="text-center py-8">Cargando gastos...</td></tr>
                         ) : gastos.length === 0 ? (

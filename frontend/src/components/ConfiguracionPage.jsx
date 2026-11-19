@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ConfiguracionService } from '../services/api';
 import UsuariosTab from './UsuariosTab';
 import { alerts } from '../utils/alerts';
+import PageHeader from './PageHeader';
 
 const ConfiguracionPage = () => {
     const [activeTab, setActiveTab] = useState('general');
@@ -64,10 +65,10 @@ const ConfiguracionPage = () => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Panel de Configuración</h2>
+            <PageHeader title="Configuración" description="Administrá precios, horarios y parámetros del complejo." />
             
             {/* Tabs Navigation */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-slate-200">
                 <nav className="-mb-px flex space-x-8">
                     <button
                         onClick={() => setActiveTab('general')}
@@ -94,7 +95,7 @@ const ConfiguracionPage = () => {
 
             {/* General Settings Tab */}
             {activeTab === 'general' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <div className="ui-card p-6">
                     {loading && !config.PRECIO_PADEL ? (
                         <div>Cargando configuración...</div>
                     ) : (
@@ -116,7 +117,7 @@ const ConfiguracionPage = () => {
                                                         name="PRECIO_PADEL"
                                                         value={config.PRECIO_PADEL || ''}
                                                         onChange={handleChange}
-                                                        className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                         className="ui-input pl-7"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
@@ -133,7 +134,7 @@ const ConfiguracionPage = () => {
                                                         name="PRECIO_PADEL_FIJO"
                                                         value={config.PRECIO_PADEL_FIJO || ''}
                                                         onChange={handleChange}
-                                                        className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                         className="ui-input pl-7"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
@@ -150,7 +151,7 @@ const ConfiguracionPage = () => {
                                                         name="PRECIO_FUTBOL"
                                                         value={config.PRECIO_FUTBOL || ''}
                                                         onChange={handleChange}
-                                                        className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                         className="ui-input pl-7"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
@@ -169,7 +170,7 @@ const ConfiguracionPage = () => {
                                                     name="DURACION_PADEL"
                                                     value={config.DURACION_PADEL || ''}
                                                     onChange={handleChange}
-                                                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                     className="ui-input"
                                                 />
                                             </div>
                                             <div>
@@ -179,7 +180,7 @@ const ConfiguracionPage = () => {
                                                     name="DURACION_FUTBOL"
                                                     value={config.DURACION_FUTBOL || ''}
                                                     onChange={handleChange}
-                                                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                     className="ui-input"
                                                 />
                                             </div>
                                         </div>
@@ -196,7 +197,7 @@ const ConfiguracionPage = () => {
                                                     name="HORARIO_APERTURA"
                                                     value={config.HORARIO_APERTURA || ''}
                                                     onChange={handleChange}
-                                                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                                                     className="ui-input"
                                                 />
                                             </div>
                                             <div>
@@ -217,7 +218,7 @@ const ConfiguracionPage = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                         className="ui-primary-button disabled:opacity-50"
                                     >
                                         {loading ? 'Guardando...' : 'Guardar Cambios'}
                                     </button>

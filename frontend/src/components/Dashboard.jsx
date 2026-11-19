@@ -1,91 +1,52 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Icon from './Icon';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const isAdmin = user?.rol === 'admin';
 
     const allModules = [
-        {
-            name: 'Reservas Padel',
-            path: '/reservas/padel',
-            icon: '🎾',
-            color: 'bg-blue-500',
-            description: 'Gestionar turnos de Padel'
-        },
-        {
-            name: 'Reservas Fútbol',
-            path: '/reservas/futbol',
-            icon: '🥅',
-            color: 'bg-green-500',
-            description: 'Gestionar turnos de Fútbol'
-        },
-        {
-            name: 'Jugadores',
-            path: '/jugadores',
-            icon: '👥',
-            color: 'bg-indigo-500',
-            description: 'Administrar base de clientes'
-        },
-        {
-            name: 'Ventas',
-            path: '/ventas',
-            icon: '💰',
-            color: 'bg-yellow-500',
-            description: 'Registrar ventas de kiosco'
-        },
-        {
-            name: 'Productos',
-            path: '/productos',
-            icon: '📦',
-            color: 'bg-orange-500',
-            description: 'Gestionar inventario'
-        },
-        {
-            name: 'Canchas',
-            path: '/canchas',
-            icon: '⚽',
-            color: 'bg-teal-500',
-            description: 'Configurar canchas',
-            adminOnly: true
-        },
-        {
-            name: 'Configuración',
-            path: '/configuracion',
-            icon: '⚙️',
-            color: 'bg-gray-500',
-            description: 'Ajustes del sistema',
-            adminOnly: true
-        }
+        { name: 'Reservas Pádel', path: '/reservas/padel', icon: 'tennis', color: 'bg-blue-500', description: 'Gestionar turnos de pádel' },
+        { name: 'Reservas Fútbol', path: '/reservas/futbol', icon: 'football', color: 'bg-green-500', description: 'Gestionar turnos de fútbol' },
+        { name: 'Jugadores', path: '/jugadores', icon: 'users', color: 'bg-indigo-500', description: 'Administrar la base de clientes' },
+        { name: 'Ventas', path: '/ventas', icon: 'money', color: 'bg-yellow-500', description: 'Registrar ventas de cantina' },
+        { name: 'Caja', path: '/caja', icon: 'cash', color: 'bg-emerald-500', description: 'Controlar ingresos y cierres' },
+        { name: 'Reportes', path: '/reportes', icon: 'chart', color: 'bg-violet-500', description: 'Analizar operación y finanzas' },
+        { name: 'Torneos', path: '/torneos', icon: 'trophy', color: 'bg-amber-500', description: 'Gestionar competencias' },
+        { name: 'Gastos', path: '/gastos', icon: 'money', color: 'bg-rose-500', description: 'Registrar gastos generales' },
+        { name: 'Productos', path: '/productos', icon: 'box', color: 'bg-orange-500', description: 'Gestionar inventario', adminOnly: true },
+        { name: 'Canchas', path: '/canchas', icon: 'football', color: 'bg-teal-500', description: 'Configurar canchas', adminOnly: true },
+        { name: 'Configuración', path: '/configuracion', icon: 'settings', color: 'bg-slate-500', description: 'Ajustes del sistema', adminOnly: true },
     ];
 
     const modules = allModules.filter(module => !module.adminOnly || isAdmin);
 
     return (
-        <div className="container mx-auto px-4 py-6 md:py-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 md:mb-8">Panel de Control</h1>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="space-y-6">
+            <div className="rounded-2xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-5 text-white shadow-lg md:p-7">
+                <p className="text-sm font-medium text-indigo-100">Centro de operaciones</p>
+                <h1 className="mt-1 text-2xl font-bold md:text-3xl">Panel de control</h1>
+                <p className="mt-2 max-w-2xl text-sm text-indigo-100">Accedé rápidamente a las tareas más importantes del complejo.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
                 {modules.map((module) => (
-                    <Link 
-                        key={module.name} 
-                        to={module.path}
-                        className="block group"
-                    >
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 h-full">
-                            <div className="p-4 md:p-6 flex items-center space-x-3 md:space-x-4">
-                                <div className={`p-3 md:p-4 rounded-lg text-white text-xl md:text-2xl ${module.color} bg-opacity-90 group-hover:bg-opacity-100 transition-colors flex-shrink-0`}>
-                                    {module.icon}
+                    <Link key={module.name} to={module.path} className="group block">
+                        <div className="h-full overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+                            <div className="flex items-center space-x-3 p-4 md:space-x-4 md:p-6">
+                                <div className={`flex shrink-0 items-center justify-center rounded-xl p-3 text-white ${module.color} bg-opacity-90 transition group-hover:bg-opacity-100 md:p-4`}>
+                                    <Icon name={module.icon} size={26} />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <h2 className="text-base md:text-xl font-bold text-gray-800 truncate">{module.name}</h2>
-                                    <p className="text-gray-500 text-xs md:text-sm mt-1 line-clamp-2">{module.description}</p>
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="truncate text-base font-bold text-slate-800 md:text-xl">{module.name}</h2>
+                                    <p className="mt-1 line-clamp-2 text-xs text-slate-500 md:text-sm">{module.description}</p>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 px-4 md:px-6 py-2 md:py-3 border-t border-gray-100 flex justify-between items-center">
-                                <span className="text-indigo-600 font-medium text-xs md:text-sm group-hover:underline">Acceder</span>
-                                <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-2.5 md:px-6">
+                                <span className="text-xs font-bold text-indigo-600 group-hover:underline md:text-sm">Abrir módulo</span>
+                                <Icon name="arrow" size={17} className="text-slate-400 transition-transform group-hover:translate-x-1" />
                             </div>
                         </div>
                     </Link>

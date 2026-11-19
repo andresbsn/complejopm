@@ -36,7 +36,7 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
 
     return (
         <div className="p-1">
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">Agregar Nueva Cancha</h3>
+            <h3 className="mb-6 text-xl font-extrabold tracking-tight text-slate-900">Agregar nueva cancha</h3>
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="nombre">
@@ -47,7 +47,7 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
                         type="text"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                        className="ui-input"
                         placeholder="Ej: Cancha 1"
                         required
                         autoComplete="off"
@@ -61,7 +61,7 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
                         id="tipo"
                         value={tipo}
                         onChange={(e) => setTipo(e.target.value)}
-                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5"
+                        className="ui-input"
                     >
                         <option value="padel">Padel</option>
                         <option value="futbol">Fútbol</option>
@@ -72,7 +72,7 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            className="ui-secondary-button"
                         >
                             Cancelar
                         </button>
@@ -80,7 +80,7 @@ const CanchaForm = ({ onCanchaAdded, defaultType = 'PADEL', onClose }) => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="ui-primary-button"
                     >
                         {loading ? 'Guardando...' : 'Guardar Cancha'}
                     </button>

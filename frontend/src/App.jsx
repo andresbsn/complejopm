@@ -42,11 +42,11 @@ function App() {
               <AdminRoute>
                 <Layout>
                   <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
-                      <h2 className="text-xl font-semibold mb-4 text-gray-800">Gestionar Canchas</h2>
+                    <div className="ui-card p-6">
+                      <h2 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">Gestionar canchas</h2>
                       <CanchaForm onCanchaAdded={() => window.location.reload()} />
                     </div>
-                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="ui-card p-6">
                       <CanchaList />
                     </div>
                   </div>
@@ -111,10 +111,10 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <div className="space-y-6">
-                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="ui-card p-6">
                     <TurnoForm onTurnoCreated={() => window.location.reload()} />
                   </div>
-                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="ui-card p-6">
                     <TurnoList />
                   </div>
                 </div>

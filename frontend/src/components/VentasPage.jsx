@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import VentaForm from './VentaForm';
 import VentaList from './VentaList';
+import PageHeader from './PageHeader';
 
 const VentasPage = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -11,11 +12,12 @@ const VentasPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">Registrar Venta</h2>
+            <PageHeader title="Ventas" description="Registrá ventas y consultá el movimiento de la cantina." />
+            <div className="ui-card p-6">
+                <h2 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">Registrar venta</h2>
                 <VentaForm onVentaCreated={handleVentaCreated} />
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="ui-card p-6">
                 <VentaList refreshTrigger={refreshTrigger} />
             </div>
         </div>

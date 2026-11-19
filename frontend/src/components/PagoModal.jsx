@@ -57,6 +57,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                     cliente_nombre: turno.cliente_nombre,
                     cliente_telefono: turno.cliente_telefono,
                     monto_total: turno.monto_total,
+                    reserva_fija_id: turno.reserva_fija_id || turno.id.toString().replace('fijo_', ''),
                     es_fijo: false // Importante: crearlo como turno normal
                 });
                 turnoId = nuevoTurno.id;
@@ -116,6 +117,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                 cliente_nombre: turno.cliente_nombre,
                 cliente_telefono: turno.cliente_telefono,
                 monto_total: turno.monto_total,
+                reserva_fija_id: turno.reserva_fija_id || turno.id.toString().replace('fijo_', ''),
                 estado: 'cancelado'
             });
             setShowCancelOptions(false);
@@ -152,14 +154,14 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 p-4">
-            <div className="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-                <div className="mt-3">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Registrar Pago</h3>
+        <div className="ui-modal-backdrop">
+            <div className="ui-modal max-w-md">
+                <div className="ui-modal-body">
+                    <h3 className="mb-1 text-xl font-extrabold tracking-tight text-slate-900">Registrar pago</h3>
                     <p className="text-sm text-gray-500 mb-2">
                         Turno: {turno.cancha_nombre} - {turno.hora_inicio}
                     </p>
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-2">
+                    <div className="mb-5 space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Total Turno:</span>
                             <span className="font-semibold">${formatCurrency(turno.monto_total)}</span>
@@ -180,7 +182,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 type="number"
                                 value={monto}
                                 onChange={(e) => setMonto(e.target.value)}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="ui-input"
                                 required
                                 max={saldoPendiente}
                                 min="0.01"
@@ -192,7 +194,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                             <select
                                 value={metodo}
                                 onChange={(e) => setMetodo(e.target.value)}
-                                className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                className="ui-input"
                             >
                                 <option value="efectivo">Efectivo</option>
                                 <option value="transferencia">Transferencia</option>
@@ -223,7 +225,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 <textarea
                                     value={observaciones}
                                     onChange={(e) => setObservaciones(e.target.value)}
-                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    className="ui-input"
                                     rows="2"
                                     placeholder="Ej: Ausencia rival, cortesía, etc."
                                 />
@@ -234,13 +236,13 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
+                                    className="ui-secondary-button flex-1"
                                 >
                                     Cerrar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
+                                    className="ui-primary-button flex-1"
                                     disabled={loading}
                                 >
                                     {loading ? 'Procesando...' : 'Pagar'}
@@ -249,7 +251,7 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline text-sm"
+                                className="ui-primary-button w-full bg-rose-600 hover:bg-rose-700"
                                 disabled={loading}
                             >
                                 Cancelar Turno
@@ -261,9 +263,9 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
 
             {/* Cancel Options Modal for Fixed Turnos */}
             {showCancelOptions && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancelar Turno Fijo</h3>
+                <div className="ui-modal-backdrop">
+                    <div className="ui-modal max-w-md p-6">
+                        <h3 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">Cancelar turno fijo</h3>
                         <p className="text-sm text-gray-600 mb-6">
                             Este es un turno fijo que se repite semanalmente. ¿Cómo deseas cancelarlo?
                         </p>
@@ -271,21 +273,21 @@ const PagoModal = ({ turno, onClose, onPagoSuccess }) => {
                             <button
                                 onClick={handleCancelToday}
                                 disabled={loading}
-                                className="w-full py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                                className="ui-primary-button w-full bg-amber-600 hover:bg-amber-700"
                             >
                                 Cancelar solo por hoy
                             </button>
                             <button
                                 onClick={handleCancelPermanently}
                                 disabled={loading}
-                                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                                className="ui-primary-button w-full bg-rose-600 hover:bg-rose-700"
                             >
                                 Cancelar definitivamente
                             </button>
                             <button
                                 onClick={() => setShowCancelOptions(false)}
                                 disabled={loading}
-                                className="w-full py-2 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                                className="ui-secondary-button w-full"
                             >
                                 Volver
                             </button>

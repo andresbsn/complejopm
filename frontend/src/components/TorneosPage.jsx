@@ -48,10 +48,10 @@ const TorneosPage = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-auto">
-                    <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Torneos</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Torneos</h1>
                     <p className="mt-1 md:mt-2 text-xs md:text-sm text-gray-700">
                         Gestión de torneos y competencias.
                     </p>
@@ -60,7 +60,7 @@ const TorneosPage = () => {
                     <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        className="ui-primary-button w-full sm:w-auto"
                     >
                         Nuevo Torneo
                     </button>
@@ -76,7 +76,7 @@ const TorneosPage = () => {
                         <div className="text-center text-sm text-gray-500 py-4">No hay torneos registrados.</div>
                     ) : (
                         torneos.map((torneo) => (
-                            <div key={torneo.id} className="bg-white shadow rounded-lg p-4 border border-gray-200">
+                            <div key={torneo.id} className="ui-card p-4">
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">{torneo.descripcion}</h3>
                                 <div className="text-sm text-gray-500 mb-4">
                                     <p>Fecha Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString()}</p>

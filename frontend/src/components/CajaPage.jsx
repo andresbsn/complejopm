@@ -172,17 +172,20 @@ const CajaPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">Control de Caja</h2>
-                <div className="space-x-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900">Control de caja</h2>
+                    <p className="mt-1 text-sm text-slate-500">Supervisá el efectivo y los movimientos del día.</p>
+                </div>
+                <div className="flex w-full rounded-lg bg-slate-100 p-1 sm:w-auto">
                     <button 
-                        className={`px-4 py-2 rounded ${tab === 'actual' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600'}`}
+                        className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold transition sm:flex-none ${tab === 'actual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                         onClick={() => setTab('actual')}
                     >
                         Caja Actual
                     </button>
                     <button 
-                        className={`px-4 py-2 rounded ${tab === 'historial' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600'}`}
+                        className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold transition sm:flex-none ${tab === 'historial' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                         onClick={() => setTab('historial')}
                     >
                         Historial

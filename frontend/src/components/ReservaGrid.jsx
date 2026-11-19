@@ -15,7 +15,7 @@ const ReservaGrid = ({
     return (
         <>
             {/* Mobile View - Schedule matrix */}
-            <div className="lg:hidden overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="ui-table-shell overflow-x-auto lg:hidden">
                 <div className="min-w-max">
                     <div
                         className="grid border-b border-gray-200 bg-gray-50"
@@ -90,7 +90,7 @@ const ReservaGrid = ({
             </div>
 
             {/* Desktop View - Table */}
-            <div className="hidden lg:block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="ui-table-shell hidden lg:block">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
                     <span className="text-sm font-semibold text-gray-700">Disponibilidad por cancha</span>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">

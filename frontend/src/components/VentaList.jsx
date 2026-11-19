@@ -66,7 +66,7 @@ const VentaList = ({ refreshTrigger }) => {
     return (
         <div className="space-y-6">
             {isAdmin ? (
-            <div className="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 items-end">
+            <div className="ui-card flex flex-wrap items-end gap-4 p-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
                     <input 
@@ -93,7 +93,7 @@ const VentaList = ({ refreshTrigger }) => {
                 </button>
             </div>
             ) : (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
                     <p className="text-blue-800 font-medium">Mostrando ventas de hoy ({new Date().toLocaleDateString()})</p>
                 </div>
             )}
@@ -102,7 +102,7 @@ const VentaList = ({ refreshTrigger }) => {
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
                     {ventas.map(venta => (
-                        <div key={venta.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <div key={venta.id} className="ui-card p-4">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <span className="text-sm font-medium text-gray-500">#{venta.id}</span>
@@ -148,8 +148,8 @@ const VentaList = ({ refreshTrigger }) => {
 
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="ui-table-shell min-w-full">
+                        <thead>
                             <tr>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -158,7 +158,7 @@ const VentaList = ({ refreshTrigger }) => {
                                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody>
                             {ventas.map(venta => (
                                 <tr key={venta.id} className="hover:bg-gray-50 transition-colors duration-150">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{venta.id}</td>
@@ -201,7 +201,7 @@ const VentaList = ({ refreshTrigger }) => {
 
             {ventaSeleccionada && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-                    <div className="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                    <div className="ui-modal max-w-2xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium text-gray-900">Detalles de Venta #{ventaSeleccionada}</h3>
                             <button 

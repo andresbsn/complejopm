@@ -73,13 +73,13 @@ const TurnoForm = ({ onTurnoCreated }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded bg-gray-50">
-      <h3 className="text-xl font-bold">Nuevo Turno</h3>
+    <form onSubmit={handleSubmit} className="ui-card space-y-5 p-5">
+      <h3 className="text-xl font-extrabold tracking-tight text-slate-900">Nuevo turno</h3>
       
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Cancha</label>
-          <select name="cancha_id" onChange={handleChange} className="w-full p-2 border rounded" required>
+           <select name="cancha_id" onChange={handleChange} className="ui-input" required>
             <option value="">Seleccionar...</option>
             {canchas.map(cancha => (
                 <option key={cancha.id} value={cancha.id}>{cancha.nombre}</option>
@@ -88,29 +88,29 @@ const TurnoForm = ({ onTurnoCreated }) => {
         </div>
         <div>
           <label className="block text-sm font-medium">Fecha</label>
-          <input type="date" name="fecha" onChange={handleChange} className="w-full p-2 border rounded" required />
+           <input type="date" name="fecha" onChange={handleChange} className="ui-input" required />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium">Hora Inicio</label>
-          <input type="time" name="hora_inicio" onChange={handleChange} className="w-full p-2 border rounded" required />
+           <input type="time" name="hora_inicio" onChange={handleChange} className="ui-input" required />
         </div>
         <div>
           <label className="block text-sm font-medium">Hora Fin</label>
-          <input type="time" name="hora_fin" onChange={handleChange} className="w-full p-2 border rounded" required />
+           <input type="time" name="hora_fin" onChange={handleChange} className="ui-input" required />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium">Cliente</label>
-        <input type="text" name="cliente_nombre" placeholder="Nombre completo" onChange={handleChange} className="w-full p-2 border rounded" required />
+        <input type="text" name="cliente_nombre" placeholder="Nombre completo" onChange={handleChange} className="ui-input" required />
       </div>
 
       <div>
         <label className="block text-sm font-medium">Teléfono</label>
-        <input type="tel" name="cliente_telefono" placeholder="WhatsApp / Tel" onChange={handleChange} className="w-full p-2 border rounded" />
+        <input type="tel" name="cliente_telefono" placeholder="WhatsApp / Tel" onChange={handleChange} className="ui-input" />
       </div>
 
       <div>
@@ -120,7 +120,7 @@ const TurnoForm = ({ onTurnoCreated }) => {
             name="monto_total" 
             value={formData.monto_total} 
             onChange={handleChange} 
-            className="w-full p-2 border rounded" 
+            className="ui-input"
             required 
         />
       </div>
@@ -139,7 +139,7 @@ const TurnoForm = ({ onTurnoCreated }) => {
         </label>
       </div>
 
-      <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+      <button type="submit" className="ui-primary-button w-full">
         Guardar Turno
       </button>
     </form>
