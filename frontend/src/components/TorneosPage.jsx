@@ -23,7 +23,11 @@ const TorneosPage = () => {
         setLoading(true);
         try {
             const data = await TorneoService.getAll();
-            setTorneos(data);
+            setTorneos([...data].sort((a, b) => {
+                const dateDifference = new Date(b.fecha_inicio) - new Date(a.fecha_inicio);
+
+                return dateDifference || b.id - a.id;
+            }));
         } catch (error) {
             console.error('Error fetching torneos:', error);
         } finally {

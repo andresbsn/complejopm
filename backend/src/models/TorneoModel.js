@@ -20,7 +20,7 @@ const TorneoModel = {
                 (SELECT COUNT(*) FROM inscripciones i WHERE i.torneo_id = t.id AND (i.pagado = FALSE OR i.pagado IS NULL) AND (i.estado IS NULL OR i.estado = 'inscripto')) as cantidad_impagos,
                 (SELECT COUNT(*) FROM inscripciones i WHERE i.torneo_id = t.id AND i.pagado = TRUE AND (i.estado IS NULL OR i.estado = 'inscripto')) as cantidad_pagados
             FROM torneos t 
-            ORDER BY t.fecha_inicio DESC
+            ORDER BY t.fecha_inicio DESC, t.id DESC
         `;
         const result = await pool.query(query);
         return result.rows;

@@ -57,7 +57,7 @@ const ReservaGrid = ({
                                             {isReserved ? (
                                                 <button
                                                     onClick={() => onSlotClick(cancha, slot, reserva)}
-                                                    className="flex h-full min-h-[64px] w-full flex-col items-center justify-center rounded-md border border-red-200 bg-red-50 px-1 text-center text-red-700 transition-colors hover:bg-red-100"
+                                                     className="flex h-full min-h-[64px] w-full flex-col items-center justify-center rounded-md border-2 border-red-500 bg-red-100 px-1 text-center font-semibold text-red-800 shadow-sm ring-1 ring-red-200 transition-colors hover:border-red-600 hover:bg-red-200"
                                                     title={`Reservado: ${reserva.cliente_nombre}`}
                                                 >
                                                     <span className="w-full truncate text-[11px] font-bold">Reservado</span>
@@ -66,16 +66,16 @@ const ReservaGrid = ({
                                             ) : isPast ? (
                                                 <button
                                                     onClick={() => onSlotClick(cancha, slot)}
-                                                    className="relative flex h-full min-h-[64px] w-full flex-col items-center justify-center overflow-hidden rounded-md border border-dashed border-amber-300 bg-amber-50 px-1 text-center text-[10px] text-amber-700 transition-colors hover:bg-amber-100"
+                                                     className="relative flex h-full min-h-[64px] w-full flex-col items-center justify-center overflow-hidden rounded-md border border-dashed border-gray-300 bg-gray-100 px-1 text-center text-[10px] text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-200"
                                                     title="Cargar reserva de un horario pasado"
                                                 >
                                                     <span className="font-semibold">Horario pasado</span>
-                                                    <span className="text-[9px] uppercase tracking-wide text-amber-600">Cargar igual</span>
+                                                     <span className="text-[9px] uppercase tracking-wide text-gray-500">Cargar igual</span>
                                                 </button>
                                             ) : (
                                                 <button
                                                     onClick={() => onSlotClick(cancha, slot)}
-                                                    className="flex h-full min-h-[64px] w-full items-center justify-center rounded-md border border-green-200 bg-green-50 px-1 text-center text-xs font-bold text-green-700 transition-colors hover:bg-green-100"
+                                                     className="flex h-full min-h-[64px] w-full items-center justify-center rounded-md border-2 border-green-500 bg-green-100 px-1 text-center text-xs font-bold text-green-800 shadow-sm ring-1 ring-green-200 transition-colors hover:border-green-600 hover:bg-green-200"
                                                 >
                                                     Libre
                                                 </button>
@@ -95,15 +95,15 @@ const ReservaGrid = ({
                     <span className="text-sm font-semibold text-gray-700">Disponibilidad por cancha</span>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                             <span className="h-2.5 w-2.5 rounded-full bg-green-600 ring-2 ring-green-200" />
                             Libre
                         </span>
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                             <span className="h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-red-200" />
                             Reservado
                         </span>
                         <span className="inline-flex items-center gap-1.5">
-                            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                             <span className="h-2.5 w-2.5 rounded-full bg-gray-400" />
                             Horario pasado
                         </span>
                     </div>
@@ -158,26 +158,26 @@ const ReservaGrid = ({
                                             {shouldShowReserva ? (
                                                 <button
                                                     onClick={() => onSlotClick(cancha, slot, reserva)}
-                                                     className="flex h-full w-full flex-col items-center justify-center rounded-md border border-red-200 bg-red-50 p-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-100">
+                                                      className="flex h-full w-full flex-col items-center justify-center rounded-md border-2 border-red-500 bg-red-100 p-2 text-xs font-semibold text-red-800 shadow-sm ring-1 ring-red-200 transition-colors hover:border-red-600 hover:bg-red-200">
                                                      <span className="mb-0.5 text-[10px] font-bold uppercase tracking-wide">Reservado</span>
                                                      <span className="truncate w-full text-center font-bold">{reserva.cliente_nombre}</span>
-                                                     <span className="truncate w-full text-center text-[10px] text-red-600">
+                                                      <span className="truncate w-full text-center text-[10px] text-red-700">
                                                         {reserva.estado === 'fijo' ? 'FIJO' : `$${formatCurrency(reserva.monto_pagado || 0)} / $${formatCurrency(reserva.monto_total)}`}
                                                     </span>
                                                 </button>
                                              ) : isPast ? (
                                                   <button
                                                       onClick={() => onSlotClick(cancha, slot)}
-                                                      className="flex h-full w-full flex-col items-center justify-center rounded-md border border-dashed border-amber-300 bg-amber-50 text-amber-700 transition-colors hover:bg-amber-100"
+                                                       className="flex h-full w-full flex-col items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-100 text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-200"
                                                       title="Cargar reserva de un horario pasado"
                                                   >
                                                       <span className="text-xs font-semibold">Horario pasado</span>
-                                                      <span className="text-[10px] uppercase tracking-wide text-amber-600">Cargar igual</span>
+                                                       <span className="text-[10px] uppercase tracking-wide text-gray-500">Cargar igual</span>
                                                   </button>
                                             ) : (
                                                 <button
                                                     onClick={() => onSlotClick(cancha, slot)}
-                                                     className="flex h-full w-full items-center justify-center rounded-md border border-green-200 bg-green-50 text-sm font-bold text-green-700 transition-colors hover:bg-green-100"
+                                                      className="flex h-full w-full items-center justify-center rounded-md border-2 border-green-500 bg-green-100 text-sm font-bold text-green-800 shadow-sm ring-1 ring-green-200 transition-colors hover:border-green-600 hover:bg-green-200"
                                                  >
                                                      Libre
                                                 </button>

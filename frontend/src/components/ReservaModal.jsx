@@ -101,13 +101,14 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
     if (!isOpen) return null;
 
     return (
-        <div className="ui-modal-backdrop" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
-
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div className="ui-modal max-w-lg text-left">
+        <div
+            className="ui-modal-backdrop"
+            aria-labelledby="modal-title"
+            role="dialog"
+            aria-modal="true"
+            onClick={onClose}
+        >
+                <div className="ui-modal relative z-10 max-w-lg text-left" onClick={e => e.stopPropagation()}>
                     <form onSubmit={handleSubmit}>
                         <div className="ui-modal-body">
                             <h3 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900" id="modal-title">
@@ -218,7 +219,6 @@ const ReservaModal = ({ isOpen, onClose, slot, date, config, type, onSuccess }) 
                         </div>
                     </form>
                 </div>
-            </div>
         </div>
     );
 };
