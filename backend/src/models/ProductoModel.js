@@ -19,6 +19,10 @@ const ProductoModel = {
             values.push(filters.estado);
         }
 
+        if (filters.stockPositive === true || filters.stockPositive === 'true') {
+            conditions.push('COALESCE(p.stock, 0) > 0');
+        }
+
         if (conditions.length > 0) {
             query += ` WHERE ${conditions.join(' AND ')}`;
         }

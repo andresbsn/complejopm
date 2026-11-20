@@ -22,7 +22,7 @@ const ReportesPage = () => {
     const [fechaDesde, setFechaDesde] = useState(getToday());
     const [fechaHasta, setFechaHasta] = useState(getToday());
     const [tipo, setTipo] = useState('');
-    const [categoriaVenta, setCategoriaVenta] = useState(''); // 'futbol', 'padel', 'cantina'
+    const [categoriaVenta, setCategoriaVenta] = useState('cantina');
     const [metodoPago, setMetodoPago] = useState('');
     const [usuarioId, setUsuarioId] = useState('');
     const [usuarios, setUsuarios] = useState([]);
@@ -94,7 +94,7 @@ const ReportesPage = () => {
         try {
             let data = [];
             if (activeTab === 'ventas' && isAdmin) {
-                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta, usuarioId };
+                const filters = filtersOverride || { fechaDesde, fechaHasta, tipo, metodoPago, categoriaVenta: 'cantina', usuarioId };
                 data = await ReporteService.getVentas(filters);
                 calculateStats(data);
                 setReportData(data);
@@ -201,10 +201,10 @@ const ReportesPage = () => {
             setFechaDesde('');
             setFechaHasta('');
             setTipo('');
-            setCategoriaVenta('');
+            setCategoriaVenta('cantina');
             setMetodoPago('');
             setUsuarioId('');
-            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', categoriaVenta: '', metodoPago: '', usuarioId: '' });
+            fetchReport({ fechaDesde: '', fechaHasta: '', tipo: '', categoriaVenta: 'cantina', metodoPago: '', usuarioId: '' });
         } else if (activeTab === 'jugadores') {
             setJugadorSearch('');
             setJugadorCategoria('');
@@ -282,13 +282,14 @@ const ReportesPage = () => {
                 doc.text(`Ganancia Estimada: $${formatCurrency(stats.totalGanancia)}`, 100, 36);
             }
             
-            const tableColumn = ["Fecha", "Descripción", "Obs.", "Tipo", "Método", "Usuario", "Monto"];
+            const tableColumn = ["Fecha", "Descripción", "Productos", "Obs.", "Tipo", "Método", "Usuario", "Monto"];
             if (isAdmin) tableColumn.push("Ganancia");
 
             const tableRows = reportData.map(item => {
                 const row = [
                     formatArgentinaDateTime(item.fecha),
                     item.descripcion,
+                    item.productos || '-',
                     item.observaciones || '-',
                     item.tipo,
                     item.metodo || '-',
@@ -386,7 +387,7 @@ const ReportesPage = () => {
                                     : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            {tab === 'ventas' ? 'Ingresos (movimientos/ventas devengadas)' :
+                             {tab === 'ventas' ? 'Cantina' :
                              tab === 'jugadores' ? 'Jugadores' : 
                              tab === 'caja' ? 'Caja' :
                               tab === 'padel' ? 'Pádel' :
@@ -446,9 +447,6 @@ const ReportesPage = () => {
                                 value={categoriaVenta} onChange={(e) => setCategoriaVenta(e.target.value)}
                                 className="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                             >
-                                <option value="">Todas</option>
-                                <option value="futbol">Fútbol</option>
-                                <option value="padel">Padel</option>
                                 <option value="cantina">Cantina</option>
                             </select>
                         </div>
@@ -577,7 +575,7 @@ const ReportesPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <p className="text-sm text-gray-500">
-                             {activeTab === 'ventas' ? 'Total movimientos/ventas devengadas' :
+                             {activeTab === 'ventas' ? 'Total Cantina' :
                              activeTab === 'jugadores' ? 'Total Jugadores' : 
                              activeTab === 'caja' ? (isAdmin ? 'Balance Caja (movimientos)' : 'Total Efectivo') : 'Deuda Total'}
                         </p>
@@ -630,6 +628,7 @@ const ReportesPage = () => {
                                             <span className="text-xs text-gray-500">{formatArgentinaDateTime(item.fecha)}</span>
                                         </div>
                                          <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                                         {item.productos && <p className="text-xs text-gray-600 mb-2">Productos: {item.productos}</p>}
                                          {item.observaciones && <p className="text-xs text-gray-500 mb-2 italic">{item.observaciones}</p>}
                                          <p className="text-xs text-gray-500 mb-2">Usuario: {item.usuario_nombre || 'Sin identificar'}</p>
                                         <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50">
@@ -808,7 +807,8 @@ const ReportesPage = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Obs.</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productos</th>
+                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Obs.</th>
                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
@@ -859,9 +859,12 @@ const ReportesPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {formatArgentinaDateTime(item.fecha)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {item.descripcion}
-                                    </td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                         {item.descripcion}
+                                     </td>
+                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                                         {item.productos || '-'}
+                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
                                         {item.observaciones || '-'}
                                     </td>

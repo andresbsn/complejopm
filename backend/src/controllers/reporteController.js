@@ -27,6 +27,10 @@ const reporteController = {
                                       JOIN productos p ON d.producto_id = p.id 
                                       WHERE d.venta_id = v.id), 0)
                          ) as ganancia,
+                         COALESCE((SELECT STRING_AGG(d.cantidad || 'x ' || p.nombre, ', ' ORDER BY p.nombre)
+                                   FROM detalle_venta_cantina d
+                                   JOIN productos p ON d.producto_id = p.id
+                                   WHERE d.venta_id = v.id), '') as productos,
                          v.observaciones,
                          'cantina' as categoria_venta,
                          ARRAY(SELECT DISTINCT pv.metodo FROM pagos_ventas pv WHERE pv.venta_id = v.id) as metodos_pago,
@@ -42,8 +46,9 @@ const reporteController = {
                         'Pago Turno ' || CASE WHEN c.tipo = 'PADEL' THEN 'Padel' ELSE 'Fútbol' END || ' ' || c.nombre as descripcion, 
                         p.metodo, 
                         p.monto,
-                        p.monto as ganancia,
-                         p.observaciones,
+                         p.monto as ganancia,
+                          NULL::text as productos,
+                          p.observaciones,
                          LOWER(c.tipo) as categoria_venta,
                          ARRAY[p.metodo]::text[] as metodos_pago,
                          p.usuario_id,
@@ -60,8 +65,9 @@ const reporteController = {
                         'Inscripción Torneo: ' || t.descripcion || ' - ' || j.nombre as descripcion,
                         i.metodo_pago as metodo,
                         i.monto_abonado as monto,
-                        0 as ganancia,
-                         NULL as observaciones,
+                         0 as ganancia,
+                          NULL::text as productos,
+                          NULL as observaciones,
                          'torneo' as categoria_venta,
                          ARRAY(SELECT DISTINCT pi.metodo FROM pagos_inscripcion pi WHERE pi.inscripcion_id = i.id) as metodos_pago,
                          i.usuario_id,

@@ -2,8 +2,8 @@ import axios from 'axios';
 import { alerts } from '../utils/alerts';
 
 const api = axios.create({
-    // baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    // baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -113,8 +113,12 @@ export const ConfiguracionService = {
 };
 
 export const JugadorService = {
-    getAll: async (search = '') => {
-        const params = search ? { search } : {};
+    getAll: async (search = '', includeInactive = false, inactiveOnly = false) => {
+        const params = {
+            ...(search ? { search } : {}),
+            ...(includeInactive ? { includeInactive: true } : {}),
+            ...(inactiveOnly ? { inactiveOnly: true } : {})
+        };
         const response = await api.get('/jugadores', { params });
         return response.data;
     },
@@ -124,6 +128,10 @@ export const JugadorService = {
     },
     update: async (id, data) => {
         const response = await api.put(`/jugadores/${id}`, data);
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await api.delete(`/jugadores/${id}`);
         return response.data;
     }
 };

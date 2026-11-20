@@ -36,7 +36,7 @@ const VentaForm = ({ onVentaCreated }) => {
 
     const cargarProductos = async () => {
         try {
-            const data = await ProductoService.getAll({ estado: 'ACTIVO' });
+            const data = await ProductoService.getAll({ estado: 'ACTIVO', stockPositive: true });
             setProductos(data);
         } catch (error) {
             console.error('Error al cargar productos:', error);

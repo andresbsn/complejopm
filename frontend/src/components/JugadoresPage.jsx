@@ -3,6 +3,7 @@ import { JugadorService, CategoriaService } from '../services/api';
 import CuentaCorrienteModal from './CuentaCorrienteModal';
 import { formatCurrency } from '../utils/formatters';
 import { alerts } from '../utils/alerts';
+import { useAuth } from '../context/AuthContext';
 
 const JugadoresPage = () => {
     const [jugadores, setJugadores] = useState([]);
@@ -15,6 +16,9 @@ const JugadoresPage = () => {
     const [selectedJugador, setSelectedJugador] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [currentJugadorId, setCurrentJugadorId] = useState(null);
+    const [showInactive, setShowInactive] = useState(false);
+    const { user } = useAuth();
+    const isAdmin = user?.rol === 'admin';
 
     useEffect(() => {
         fetchData();
@@ -24,7 +28,7 @@ const JugadoresPage = () => {
         setLoading(true);
         try {
             const [jugadoresData, categoriasData] = await Promise.all([
-                JugadorService.getAll(),
+                JugadorService.getAll('', false, showInactive),
                 CategoriaService.getAll()
             ]);
             setJugadores(jugadoresData);
@@ -39,7 +43,7 @@ const JugadoresPage = () => {
     const fetchJugadores = async (search = '') => {
         setLoading(true);
         try {
-            const data = await JugadorService.getAll(search);
+            const data = await JugadorService.getAll(search, false, showInactive);
             setJugadores(data);
         } catch (error) {
             console.error('Error fetching jugadores:', error);
@@ -61,7 +65,40 @@ const JugadoresPage = () => {
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm]);
+    }, [searchTerm, showInactive]);
+
+    const handleToggleActive = async (jugador) => {
+        const activo = jugador.activo === false;
+        const result = await alerts.confirm(
+            activo ? '¿Reactivar jugador?' : '¿Inhabilitar jugador?',
+            activo ? 'Volverá a aparecer en las listas.' : 'Se ocultará de las listas y se conservará su historial.',
+            activo ? 'Reactivar' : 'Inhabilitar'
+        );
+        if (!result.isConfirmed) return;
+        try {
+            await JugadorService.update(jugador.id, { activo });
+            fetchJugadores(searchTerm);
+            alerts.toast('success', activo ? 'Jugador reactivado' : 'Jugador inhabilitado');
+        } catch (error) {
+            alerts.error('Error', error.response?.data?.error || 'No se pudo cambiar el estado');
+        }
+    };
+
+    const handleDelete = async (jugador) => {
+        const result = await alerts.confirm(
+            '¿Eliminar jugador?',
+            'Solo se puede eliminar si no tiene movimientos de cuenta ni inscripciones.',
+            'Eliminar'
+        );
+        if (!result.isConfirmed) return;
+        try {
+            await JugadorService.delete(jugador.id);
+            fetchJugadores(searchTerm);
+            alerts.toast('success', 'Jugador eliminado');
+        } catch (error) {
+            alerts.error('No se puede eliminar', error.response?.data?.error || 'Tiene actividad relacionada');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -132,6 +169,17 @@ const JugadoresPage = () => {
                     value={searchTerm}
                     onChange={handleSearch}
                 />
+                {isAdmin && (
+                    <label className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                        <input
+                            type="checkbox"
+                            checked={showInactive}
+                            onChange={(e) => setShowInactive(e.target.checked)}
+                            className="rounded border-gray-300 text-indigo-600"
+                        />
+                        Mostrar jugadores inhabilitados
+                    </label>
+                )}
             </div>
 
             <div className="mt-8 flex flex-col">
@@ -173,6 +221,18 @@ const JugadoresPage = () => {
                                             >
                                                 Ver Cuenta
                                             </button>
+                                            {isAdmin && (
+                                                <>
+                                                    <button onClick={() => handleToggleActive(jugador)} className="ml-2 text-amber-700 hover:text-amber-900 text-sm font-medium">
+                                                        {jugador.activo === false ? 'Reactivar' : 'Inhabilitar'}
+                                                    </button>
+                                                    {jugador.activo !== false && (
+                                                        <button onClick={() => handleDelete(jugador)} className="ml-2 text-red-600 hover:text-red-900 text-sm font-medium">
+                                                            Eliminar
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 ))
@@ -224,10 +284,22 @@ const JugadoresPage = () => {
                                                     </button>
                                                     <button 
                                                         onClick={() => setSelectedJugador(jugador)}
-                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                         className="text-indigo-600 hover:text-indigo-900 mr-4"
                                                     >
                                                         Ver Cuenta
                                                     </button>
+                                                    {isAdmin && (
+                                                        <>
+                                                            <button onClick={() => handleToggleActive(jugador)} className="text-amber-700 hover:text-amber-900 mr-4">
+                                                                {jugador.activo === false ? 'Reactivar' : 'Inhabilitar'}
+                                                            </button>
+                                                            {jugador.activo !== false && (
+                                                                <button onClick={() => handleDelete(jugador)} className="text-red-600 hover:text-red-900">
+                                                                    Eliminar
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))
